@@ -1,0 +1,13 @@
+[package]
+name = "wmfocus"
+version = "0.1.0"
+authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>"]
+
+[features]
+i3 = ["i3ipc"]
+
+[dependencies]
+clap = "2.31"
+winit = "0.15"
+
+i3ipc = { version = "0.8", optional = true }
