@@ -8,6 +8,9 @@ i3 = ["i3ipc"]
 
 [dependencies]
 clap = "2.31"
-winit = "0.15"
+glium = "0.21"
 
 i3ipc = { version = "0.8", optional = true }
+
+[patch.crates-io]
+glium = { git = 'https://github.com/senet4er/glium'}

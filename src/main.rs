@@ -1,11 +1,13 @@
 #[macro_use]
 extern crate clap;
+extern crate glium;
 
-extern crate winit;
+use glium::{glutin, Surface};
 
 use clap::{App, Arg};
+use glutin::os::unix::{WindowBuilderExt, XWindowType};
+use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use std::collections::HashMap;
-use winit::{ControlFlow, Event, WindowEvent};
 
 pub struct AppConfig {
     pub font: String,
@@ -54,57 +56,63 @@ fn main() {
     parse_args();
     wm::thing();
 
-    let mut events_loop = winit::EventsLoop::new();
+    let mut events_loop = glutin::EventsLoop::new();
 
-    let mut windows = HashMap::new();
+    let mut displays = HashMap::new();
     for i in 0..3 {
-        let window = winit::WindowBuilder::new()
+        let window = glutin::WindowBuilder::new()
             .with_decorations(false)
             .with_always_on_top(true)
+            .with_x11_window_type(XWindowType::Dialog)
             .with_transparency(true)
-            .with_min_dimensions(30, 30)
-            .with_max_dimensions(30, 30)
-            .with_always_on_top(true)
-            .build(&events_loop)
-            .unwrap();
-        window.set_position(20 + 300 * i, 20 + 30);
-        windows.insert(window.id(), window);
+            .with_dimensions(50, 50);
+        let context = glutin::ContextBuilder::new();
+        let display = glium::Display::new(window, context, &events_loop).unwrap();
+        display.gl_window().set_position(20 + 300 * i, 20 + 30);
+        displays.insert(i, display);
     }
 
-    events_loop.run_forever(|event| {
-        println!("{:?}", event);
+    let mut closed = false;
+    while !closed {
+		for (i, display) in &displays {
+			let mut target = display.draw();
+			target.clear_color(0.0 + 3.0 / (i + 1) as f32, 0.0, 1.0, 0.5);
+			target.finish().unwrap();
+		}
 
-        match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => return ControlFlow::Break,
-                WindowEvent::KeyboardInput {
-                    input:
-                        winit::KeyboardInput {
-                            virtual_keycode: Some(virtual_code),
-                            state,
-                            ..
-                        },
-                    ..
-                } => match (virtual_code, state) {
-                    (winit::VirtualKeyCode::Escape, _) => return ControlFlow::Break,
-                    _ => {
-                        println!("{:?}", virtual_code);
-                        return ControlFlow::Break;
-                    }
+        events_loop.poll_events(|event| {
+            println!("{:?}", event);
+
+            match event {
+                Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::CloseRequested => closed = true,
+                    WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                virtual_keycode: Some(virtual_code),
+                                state,
+                                ..
+                            },
+                        ..
+                    } => match (virtual_code, state) {
+                        (VirtualKeyCode::Escape, _) => closed = true,
+                        _ => {
+                            println!("{:?}", virtual_code);
+                            closed = true;
+                        }
+                    },
+                    _ => (),
                 },
-                _ => (),
-            },
-            _ => {}
-        }
-
-        ControlFlow::Continue
-    });
+                _ => {}
+            }
+        });
+    }
 }
 
 #[cfg(not(any(feature = "i3", feature = "add_some_other_wm_here")))]
 fn main() {
     eprintln!(
-        "You need to enable to enabe at least one WM feature.\n
+        "You need to enable to enabe support for at least one window manager.\n
 Currently supported:
     --features i3"
     );
