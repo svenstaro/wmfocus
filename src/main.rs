@@ -3,10 +3,10 @@ extern crate clap;
 extern crate font_loader;
 extern crate fps_clock;
 extern crate glium;
-extern crate glium_text_rusttype;
+extern crate glium_text_rusttype as glium_text;
 
 use font_loader::system_fonts;
-use glium::{glutin, Surface};
+use glium::{glutin, Surface, Display};
 use std::error::Error;
 
 use clap::{App, Arg};
@@ -108,7 +108,7 @@ fn main() {
             .with_dimensions(50, 50);
         let context = glutin::ContextBuilder::new();
         let display = glium::Display::new(gwindow, context, &events_loop).unwrap();
-        // let text_system = glium_text::TextSystem::new(&display);
+        let text_system = glium_text::TextSystem::new(&display);
         // let font = glium_text::FontTexture::new(
         //     &display,
         //     File::open("font.ttf").unwrap(),
