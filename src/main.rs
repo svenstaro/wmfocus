@@ -13,6 +13,8 @@ pub struct AppConfig {
     pub font: String,
 }
 
+static HINT_CHARS: &'static str = "sadfjklewcmpgh";
+
 #[cfg(feature = "i3")]
 extern crate i3ipc;
 
@@ -76,12 +78,12 @@ fn main() {
     while !closed {
 		for (i, display) in &displays {
 			let mut target = display.draw();
-			target.clear_color(0.0 + 3.0 / (i + 1) as f32, 0.0, 1.0, 0.5);
+			target.clear_color(0.0 + 3.0 / (i + 1) as f32, 0.0, 1.0, 1.0);
 			target.finish().unwrap();
 		}
 
         events_loop.poll_events(|event| {
-            println!("{:?}", event);
+            // println!("{:?}", event);
 
             match event {
                 Event::WindowEvent { event, .. } => match event {
