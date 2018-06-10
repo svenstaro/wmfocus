@@ -1,11 +1,6 @@
 use i3ipc::reply::{Node, NodeType, Workspace};
 use i3ipc::{I3Connection, MessageError};
-
-#[derive(Debug)]
-struct Window {
-    id: i64,
-    rect: (i32, i32, i32, i32),
-}
+use Window;
 
 /// Find first `Node` that fulfills a given criterion.
 fn find_first_node_with_attr<F>(start_node: &Node, predicate: F) -> Option<&Node>
@@ -47,7 +42,7 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<Window> {
             if node.window.is_some() {
                 let window = Window {
                     id: node.id,
-                    rect: node.rect,
+                    pos: (node.rect.0 + node.deco_rect.0, node.rect.1 - node.deco_rect.3),
                 };
                 windows.push(window);
             }
@@ -57,22 +52,20 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<Window> {
     windows
 }
 
-pub fn thing() {
+pub fn get_windows() -> Vec<Window> {
     // establish a connection to i3 over a unix socket
     let mut connection = I3Connection::connect().unwrap();
     let workspaces = connection
         .get_workspaces()
         .expect("Problem communicating with i3")
         .workspaces;
-    let visible_workspaces = workspaces
-        .iter()
-        .filter(|w| w.visible);
+    let visible_workspaces = workspaces.iter().filter(|w| w.visible);
     let root_node = connection.get_tree().expect("Uh");
     let mut windows = vec![];
     for workspace in visible_workspaces {
         windows = crawl_windows(&root_node, &workspace);
     }
-    println!("{:#?}", windows);
+    windows
 
     // request and print the i3 version
     // println!("{:?}", connection.get_tree().unwrap());
