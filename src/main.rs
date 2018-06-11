@@ -5,6 +5,7 @@ extern crate font_loader;
 extern crate fps_clock;
 extern crate glium;
 extern crate glium_text_rusttype as glium_text;
+extern crate itertools;
 
 use font_loader::system_fonts;
 use glium::{glutin, Surface};
@@ -12,6 +13,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use clap::{App, Arg};
+use itertools::Itertools;
 use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 
@@ -63,13 +65,13 @@ pub fn parse_args() -> AppConfig {
         .about(crate_description!())
         .arg(
             Arg::with_name("font")
-                .short("f")
-                .long("font")
-                .takes_value(true)
-                .validator(is_truetype_font)
-                .default_value("DejaVu Sans Mono:72")
-                .help("Use a specific TrueType font with this format: family:size"),
-        )
+            .short("f")
+            .long("font")
+            .takes_value(true)
+            .validator(is_truetype_font)
+            .default_value("DejaVu Sans Mono:72")
+            .help("Use a specific TrueType font with this format: family:size"),
+            )
         .get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
@@ -77,19 +79,32 @@ pub fn parse_args() -> AppConfig {
     let (font_family, font_size) = (
         v.get(0).unwrap().to_string(),
         v.get(1).unwrap().parse::<u32>().unwrap(),
-    );
+        );
     AppConfig {
         font_family,
         font_size,
     }
 }
 
-fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str) -> String {
-    for c in hint_chars.chars() {
-        if !current_hints.contains(&&c.to_string()) {
-            return c.to_string();
+/// Given a list of `current_hints` and a bunch of `hint_chars`, this finds a unique combination
+/// of characters that doesn't yet exist in `current_hints`. `max_count` is the maximum possible
+/// number of hints we need.
+fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: usize) -> String {
+    // Figure out which size we need.
+    let mut size_required = 1;
+    while hint_chars.len().pow(size_required) < max_count {
+        size_required += 1;
+    }
+    let mut ret = hint_chars.chars().next().expect("No hint_chars found").to_string();
+    let it = std::iter::repeat(hint_chars.chars().rev()).take(size_required as usize).multi_cartesian_product();
+    for c in it {
+        let folded = c.into_iter().collect();
+        if !current_hints.contains(&&folded) {
+            ret = folded;
         }
     }
+    println!("generated {}", ret);
+    ret
 }
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
@@ -119,7 +134,7 @@ fn main() {
 
     let mut events_loop = glutin::EventsLoop::new();
     let mut render_windows = HashMap::new();
-    for window in windows {
+    for window in &windows {
         let gwindow = glutin::WindowBuilder::new()
             .with_decorations(false)
             .with_always_on_top(true)
@@ -135,13 +150,13 @@ fn main() {
             loaded_font.as_slice(),
             app_config.font_size,
             HINT_CHARS.chars(),
-        ).expect("Error loading font");
+            ).expect("Error loading font");
         let render_window = RenderWindow {
             text_system,
             font,
             display,
         };
-        let hint = get_next_hint(render_windows.keys().collect(), HINT_CHARS);
+        let hint = get_next_hint(render_windows.keys().collect(), HINT_CHARS, windows.len());
         render_windows.insert(hint.clone(), render_window);
         let rw = &render_windows[&hint];
         let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
@@ -149,10 +164,10 @@ fn main() {
         let ratio = text_height / text_width;
         let window_width = 320;
         let window_height = (window_width as f32 * ratio) as u32;
-        println!(
-            "text_width {} text_height {}, ratio {}, window_width {} window_height {}",
-            text_width, text_height, ratio, window_width, window_height
-        );
+        // println!(
+        //     "text_width {} text_height {}, ratio {}, window_width {} window_height {}",
+        //     text_width, text_height, ratio, window_width, window_height
+        //     );
         rw.display
             .gl_window()
             .set_inner_size(window_width, window_height);
@@ -172,7 +187,7 @@ fn main() {
                 0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
                 -1.0, -1.0, 0.0, 1.0f32,
-            ).into();
+                ).into();
 
             let mut target = rw.display.draw();
             target.clear_color(0.0, 0.0, 1.0, 1.0);
@@ -182,7 +197,7 @@ fn main() {
                 &mut target,
                 matrix,
                 (1.0, 1.0, 0.0, 1.0),
-            ).unwrap();
+                ).unwrap();
             target.finish().unwrap();
         }
         events_loop.poll_events(|event| match event {
@@ -195,7 +210,7 @@ fn main() {
                             state,
                             ..
                         },
-                    ..
+                        ..
                 } => match (virtual_code, state) {
                     (VirtualKeyCode::Escape, _) => closed = true,
                     _ => {
@@ -203,7 +218,7 @@ fn main() {
                         closed = true;
                     }
                 },
-                _ => (),
+                        _ => (),
             },
             _ => {}
         });

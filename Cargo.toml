@@ -14,6 +14,7 @@ i3ipc = { version = "0.8", optional = true }
 fps_clock = "2.0"
 font-loader = "0.7"
 cgmath = "0.16"
+itertools = "0.7"
 
 [patch.crates-io]
 glium = { git = 'https://github.com/senet4er/glium'}
