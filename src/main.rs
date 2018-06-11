@@ -141,6 +141,7 @@ fn main() {
     let mut events_loop = glutin::EventsLoop::new();
     let mut render_windows = HashMap::new();
     for window in &windows {
+        println!("{:?}", window);
         let gwindow = glutin::WindowBuilder::new()
             .with_decorations(false)
             .with_always_on_top(true)
@@ -185,7 +186,7 @@ fn main() {
             let (w, h) = rw.display.get_framebuffer_dimensions();
             let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
             let text_width = text.get_width();
-            println!("{} {}", w, h);
+            // println!("{} {}", w, h);
 
             #[cfg_attr(rustfmt, rustfmt_skip)]
             let matrix:[[f32; 4]; 4] = cgmath::Matrix4::new(

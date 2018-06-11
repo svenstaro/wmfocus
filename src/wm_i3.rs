@@ -63,7 +63,7 @@ pub fn get_windows() -> Vec<Window> {
     let root_node = connection.get_tree().expect("Uh");
     let mut windows = vec![];
     for workspace in visible_workspaces {
-        windows = crawl_windows(&root_node, &workspace);
+        windows.extend(crawl_windows(&root_node, &workspace));
     }
     windows
 
