@@ -13,9 +13,9 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use clap::{App, Arg};
-use itertools::Itertools;
 use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use itertools::Itertools;
 
 #[derive(Debug)]
 pub struct Window {
@@ -65,13 +65,13 @@ pub fn parse_args() -> AppConfig {
         .about(crate_description!())
         .arg(
             Arg::with_name("font")
-            .short("f")
-            .long("font")
-            .takes_value(true)
-            .validator(is_truetype_font)
-            .default_value("DejaVu Sans Mono:72")
-            .help("Use a specific TrueType font with this format: family:size"),
-            )
+                .short("f")
+                .long("font")
+                .takes_value(true)
+                .validator(is_truetype_font)
+                .default_value("DejaVu Sans Mono:72")
+                .help("Use a specific TrueType font with this format: family:size"),
+        )
         .get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
@@ -79,7 +79,7 @@ pub fn parse_args() -> AppConfig {
     let (font_family, font_size) = (
         v.get(0).unwrap().to_string(),
         v.get(1).unwrap().parse::<u32>().unwrap(),
-        );
+    );
     AppConfig {
         font_family,
         font_size,
@@ -95,8 +95,14 @@ fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: usize
     while hint_chars.len().pow(size_required) < max_count {
         size_required += 1;
     }
-    let mut ret = hint_chars.chars().next().expect("No hint_chars found").to_string();
-    let it = std::iter::repeat(hint_chars.chars().rev()).take(size_required as usize).multi_cartesian_product();
+    let mut ret = hint_chars
+        .chars()
+        .next()
+        .expect("No hint_chars found")
+        .to_string();
+    let it = std::iter::repeat(hint_chars.chars().rev())
+        .take(size_required as usize)
+        .multi_cartesian_product();
     for c in it {
         let folded = c.into_iter().collect();
         if !current_hints.contains(&&folded) {
@@ -150,7 +156,7 @@ fn main() {
             loaded_font.as_slice(),
             app_config.font_size,
             HINT_CHARS.chars(),
-            ).expect("Error loading font");
+        ).expect("Error loading font");
         let render_window = RenderWindow {
             text_system,
             font,
@@ -197,7 +203,7 @@ fn main() {
                 &mut target,
                 matrix,
                 (1.0, 1.0, 0.0, 1.0),
-                ).unwrap();
+            ).unwrap();
             target.finish().unwrap();
         }
         events_loop.poll_events(|event| match event {
@@ -210,7 +216,7 @@ fn main() {
                             state,
                             ..
                         },
-                        ..
+                    ..
                 } => match (virtual_code, state) {
                     (VirtualKeyCode::Escape, _) => closed = true,
                     _ => {
@@ -218,7 +224,7 @@ fn main() {
                         closed = true;
                     }
                 },
-                        _ => (),
+                _ => (),
             },
             _ => {}
         });
