@@ -21,10 +21,12 @@ use itertools::Itertools;
 #[derive(Debug)]
 pub struct Window {
     id: i64,
+    title: String,
     pos: PhysicalPosition,
 }
 
-pub struct RenderWindow {
+pub struct RenderWindow<'a> {
+    window: &'a Window,
     text_system: glium_text::TextSystem,
     font: glium_text::FontTexture,
     display: glium::Display,
@@ -47,6 +49,7 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use wm_i3 as wm;
 
+/// Checks whether the provided fontconfig font `f` is valid.
 fn is_truetype_font(f: String) -> Result<(), String> {
     let v: Vec<_> = f.split(":").collect();
     let (family, size) = (v.get(0), v.get(1));
@@ -59,6 +62,7 @@ fn is_truetype_font(f: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Parse app arguments.
 pub fn parse_args() -> AppConfig {
     let matches = App::new(crate_name!())
         .version(crate_version!())
@@ -159,25 +163,31 @@ fn main() {
             app_config.font_size,
             HINT_CHARS.chars(),
         ).expect("Error loading font");
+
         let dpi = display.gl_window().get_hidpi_factor();
         let render_window = RenderWindow {
+            window,
             text_system,
             font,
             display,
         };
+
         let hint = get_next_hint(render_windows.keys().collect(), HINT_CHARS, windows.len());
         render_windows.insert(hint.clone(), render_window);
         let rw = &render_windows[&hint];
         let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
         let (text_width, text_height) = (text.get_width(), text.get_height());
         let ratio = (text_height / text_width) as f64;
+
         let window_width = 50.0f64;
         let window_height = window_width * ratio;
         let window_size = PhysicalSize::new(window_width, window_height);
+
         // println!(
         //     "text_width {} text_height {}, ratio {}, window_width {} window_height {}",
         //     text_width, text_height, ratio, window_width, window_height
         //     );
+
         rw.display
             .gl_window()
             .set_inner_size(window_size.to_logical(dpi));
@@ -225,6 +235,14 @@ fn main() {
                     (VirtualKeyCode::Escape, _) => closed = true,
                     _ => {
                         println!("{:?}", virtual_code);
+
+                        // So this is probably fairly hacky but what am I to do!
+                        // I've got to match the enum by variant name and this is the only way I
+                        // see.
+                        let key_str = format!("{:?}", virtual_code);
+                        if let Some(rw) = &render_windows.get(&key_str.to_lowercase()) {
+                            wm::focus_window(&rw.window);
+                        }
                         closed = true;
                     }
                 },

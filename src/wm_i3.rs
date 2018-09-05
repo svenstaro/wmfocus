@@ -42,10 +42,12 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<Window> {
             if node.window.is_some() {
                 let window = Window {
                     id: node.id,
+                    title: node.name.clone().unwrap_or_default(),
                     pos: (
                         node.rect.0 + node.deco_rect.0,
                         node.rect.1 - node.deco_rect.3,
-                    ).into(),
+                    )
+                        .into(),
                 };
                 windows.push(window);
             }
@@ -55,9 +57,10 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<Window> {
     windows
 }
 
+/// Return a list of all windows.
 pub fn get_windows() -> Vec<Window> {
-    // establish a connection to i3 over a unix socket
-    let mut connection = I3Connection::connect().unwrap();
+    // Establish a connection to i3 over a unix socket
+    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
     let workspaces = connection
         .get_workspaces()
         .expect("Problem communicating with i3")
@@ -75,4 +78,12 @@ pub fn get_windows() -> Vec<Window> {
 
     // fullscreen the focused window
     // connection.run_command("fullscreen").unwrap();
+}
+
+/// Focus a specific `window`.
+pub fn focus_window(window: &Window) {
+    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
+    let command_str = format!("[con_id=\"{}\"] focus", window.id);
+    let command = connection.run_command(&command_str);
+    println!("{:?}", command);
 }
