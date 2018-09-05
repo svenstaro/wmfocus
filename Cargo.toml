@@ -15,3 +15,6 @@ fps_clock = "2.0"
 font-loader = "0.7"
 cgmath = "0.16"
 itertools = "0.7"
+
+[profile.release]
+lto = true
