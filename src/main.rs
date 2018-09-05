@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use clap::{App, Arg};
+use glutin::dpi::{PhysicalPosition, PhysicalSize};
 use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use itertools::Itertools;
@@ -20,7 +21,7 @@ use itertools::Itertools;
 #[derive(Debug)]
 pub struct Window {
     id: i64,
-    pos: (i32, i32),
+    pos: PhysicalPosition,
 }
 
 pub struct RenderWindow {
@@ -71,8 +72,7 @@ pub fn parse_args() -> AppConfig {
                 .validator(is_truetype_font)
                 .default_value("DejaVu Sans Mono:72")
                 .help("Use a specific TrueType font with this format: family:size"),
-        )
-        .get_matches();
+        ).get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
     let v: Vec<_> = font.split(":").collect();
@@ -149,7 +149,8 @@ fn main() {
             .with_transparency(true);
         let context = glutin::ContextBuilder::new();
         let display = glium::Display::new(gwindow, context, &events_loop).unwrap();
-        display.gl_window().set_position(window.pos.0, window.pos.1);
+        let dpi = display.gl_window().get_hidpi_factor();
+        display.gl_window().set_position(window.pos.to_logical(dpi));
 
         let text_system = glium_text::TextSystem::new(&display);
         let font = glium_text::FontTexture::new(
@@ -158,6 +159,7 @@ fn main() {
             app_config.font_size,
             HINT_CHARS.chars(),
         ).expect("Error loading font");
+        let dpi = display.gl_window().get_hidpi_factor();
         let render_window = RenderWindow {
             text_system,
             font,
@@ -168,16 +170,17 @@ fn main() {
         let rw = &render_windows[&hint];
         let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
         let (text_width, text_height) = (text.get_width(), text.get_height());
-        let ratio = text_height / text_width;
-        let window_width = 320;
-        let window_height = (window_width as f32 * ratio) as u32;
+        let ratio = (text_height / text_width) as f64;
+        let window_width = 50.0f64;
+        let window_height = window_width * ratio;
+        let window_size = PhysicalSize::new(window_width, window_height);
         // println!(
         //     "text_width {} text_height {}, ratio {}, window_width {} window_height {}",
         //     text_width, text_height, ratio, window_width, window_height
         //     );
         rw.display
             .gl_window()
-            .set_inner_size(window_width, window_height);
+            .set_inner_size(window_size.to_logical(dpi));
     }
 
     let mut closed = false;

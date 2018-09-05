@@ -1,5 +1,5 @@
 use i3ipc::reply::{Node, NodeType, Workspace};
-use i3ipc::{I3Connection, MessageError};
+use i3ipc::I3Connection;
 use Window;
 
 /// Find first `Node` that fulfills a given criterion.
@@ -42,7 +42,10 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<Window> {
             if node.window.is_some() {
                 let window = Window {
                     id: node.id,
-                    pos: (node.rect.0 + node.deco_rect.0, node.rect.1 - node.deco_rect.3),
+                    pos: (
+                        node.rect.0 + node.deco_rect.0,
+                        node.rect.1 - node.deco_rect.3,
+                    ).into(),
                 };
                 windows.push(window);
             }
