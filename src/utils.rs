@@ -1,13 +1,9 @@
-use std::cmp::max;
-use std::collections::HashMap;
 use std::error::Error;
-
-use clap::{App, Arg};
-use itertools::Itertools;
-use font_loader::system_fonts;
 use std::iter;
 
-use rusttype::Font;
+use clap::{App, Arg};
+use font_loader::system_fonts;
+use itertools::Itertools;
 
 use AppConfig;
 
