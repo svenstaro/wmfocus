@@ -1,44 +1,16 @@
 #[macro_use]
 extern crate clap;
-extern crate cgmath;
 extern crate font_loader;
 extern crate fps_clock;
-extern crate glium;
-extern crate glium_text_rusttype as glium_text;
 extern crate itertools;
+extern crate rusttype;
+extern crate glutin;
 
-use font_loader::system_fonts;
-use glium::{glutin, Surface};
 use std::collections::HashMap;
-use std::error::Error;
+use glutin::dpi::{PhysicalPosition, LogicalPosition, LogicalSize};
+use glutin::os::unix::{XWindowType, WindowBuilderExt};
 
-use clap::{App, Arg};
-use glutin::dpi::{PhysicalPosition, PhysicalSize};
-use glutin::os::unix::{WindowBuilderExt, XWindowType};
-use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
-use itertools::Itertools;
-
-#[derive(Debug)]
-pub struct Window {
-    id: i64,
-    title: String,
-    pos: PhysicalPosition,
-}
-
-pub struct RenderWindow<'a> {
-    window: &'a Window,
-    text_system: glium_text::TextSystem,
-    font: glium_text::FontTexture,
-    display: glium::Display,
-}
-
-#[derive(Debug)]
-pub struct AppConfig {
-    pub font_family: String,
-    pub font_size: u32,
-}
-
-static HINT_CHARS: &'static str = "sadfjklewcmpgh";
+mod utils;
 
 #[cfg(feature = "i3")]
 extern crate i3ipc;
@@ -49,190 +21,168 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use wm_i3 as wm;
 
-/// Checks whether the provided fontconfig font `f` is valid.
-fn is_truetype_font(f: String) -> Result<(), String> {
-    let v: Vec<_> = f.split(":").collect();
-    let (family, size) = (v.get(0), v.get(1));
-    if family.is_none() || size.is_none() {
-        return Err("From font format".to_string());
-    }
-    if let Err(e) = size.unwrap().parse::<u32>() {
-        return Err(e.description().to_string());
-    }
-    Ok(())
+#[derive(Debug)]
+pub struct DesktopWindow {
+    id: i64,
+    title: String,
+    pos: (i32, i32),
 }
 
-/// Parse app arguments.
-pub fn parse_args() -> AppConfig {
-    let matches = App::new(crate_name!())
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
-        .arg(
-            Arg::with_name("font")
-                .short("f")
-                .long("font")
-                .takes_value(true)
-                .validator(is_truetype_font)
-                .default_value("DejaVu Sans Mono:72")
-                .help("Use a specific TrueType font with this format: family:size"),
-        ).get_matches();
-
-    let font = value_t!(matches, "font", String).unwrap();
-    let v: Vec<_> = font.split(":").collect();
-    let (font_family, font_size) = (
-        v.get(0).unwrap().to_string(),
-        v.get(1).unwrap().parse::<u32>().unwrap(),
-    );
-    AppConfig {
-        font_family,
-        font_size,
-    }
+pub struct RenderWindow<'a> {
+    desktop_window: &'a DesktopWindow,
+    glutin_window: glutin::Window,
+    // text_system: glium_text::TextSystem,
+    // font: glium_text::FontTexture,
+    // display: glium::Display,
 }
 
-/// Given a list of `current_hints` and a bunch of `hint_chars`, this finds a unique combination
-/// of characters that doesn't yet exist in `current_hints`. `max_count` is the maximum possible
-/// number of hints we need.
-fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: usize) -> String {
-    // Figure out which size we need.
-    let mut size_required = 1;
-    while hint_chars.len().pow(size_required) < max_count {
-        size_required += 1;
-    }
-    let mut ret = hint_chars
-        .chars()
-        .next()
-        .expect("No hint_chars found")
-        .to_string();
-    let it = std::iter::repeat(hint_chars.chars().rev())
-        .take(size_required as usize)
-        .multi_cartesian_product();
-    for c in it {
-        let folded = c.into_iter().collect();
-        if !current_hints.contains(&&folded) {
-            ret = folded;
-        }
-    }
-    println!("generated {}", ret);
-    ret
+#[derive(Debug)]
+pub struct AppConfig {
+    pub font_family: String,
+    pub font_size: u32,
+    pub loaded_font: Vec<u8>,
 }
+
+static HINT_CHARS: &'static str = "sadfjklewcmpgh";
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
 fn main() {
-    let app_config = parse_args();
-    let font_family_property = system_fonts::FontPropertyBuilder::new()
-        .family(&app_config.font_family)
-        .build();
-    let (loaded_font, _) =
-        if let Some((loaded_font, index)) = system_fonts::get(&font_family_property) {
-            (loaded_font, index)
-        } else {
-            eprintln!("Family not found, falling back to first Monospace font");
-            let mut font_monospace_property =
-                system_fonts::FontPropertyBuilder::new().monospace().build();
-            let sysfonts = system_fonts::query_specific(&mut font_monospace_property);
-            eprintln!("Falling back to font '{font}'", font = sysfonts[0]);
-            let (loaded_font, index) =
-                system_fonts::get(&font_monospace_property).expect("Couldn't find suitable font");
-            (loaded_font, index)
-        };
+    let app_config = utils::parse_args();
 
-    let windows = wm::get_windows();
+    // Get the windows from each specific window manager implementation.
+    let desktop_windows = wm::get_windows();
 
     // Limit FPS to preserve performance
     let mut fps = fps_clock::FpsClock::new(30);
 
+    // let font = Font::from_bytes(&loaded_font).expect("Couldn't load font");
+
     let mut events_loop = glutin::EventsLoop::new();
     let mut render_windows = HashMap::new();
-    for window in &windows {
-        println!("{:?}", window);
-        let gwindow = glutin::WindowBuilder::new()
-            .with_decorations(false)
-            .with_always_on_top(true)
-            .with_x11_window_type(XWindowType::Dialog)
-            .with_transparency(true);
-        let context = glutin::ContextBuilder::new();
-        let display = glium::Display::new(gwindow, context, &events_loop).unwrap();
-        let dpi = display.gl_window().get_hidpi_factor();
-        display.gl_window().set_position(window.pos.to_logical(dpi));
+    for desktop_window in &desktop_windows {
+        // We need to estimate the font size before rendering because we want the window to only be
+        // the size of the font.
+        let hint = utils::get_next_hint(render_windows.keys().collect(), HINT_CHARS, desktop_windows.len());
+        // let hint_text = font.layout(
+        //     &hint,
+        //     rusttype::Scale::uniform(app_config.font_size as f32),
+        //     rusttype::Point { x: 0.0, y: 0.0 },
+        // );
+        // let (width, height) = hint_text.fold((0, 0), |acc, current| {
+        //     (
+        //         max(acc.0, current.pixel_bounding_box().unwrap().max.x),
+        //         max(acc.1, current.pixel_bounding_box().unwrap().height()),
+        //     )
+        // });
 
-        let text_system = glium_text::TextSystem::new(&display);
-        let font = glium_text::FontTexture::new(
-            &display,
-            loaded_font.as_slice(),
-            app_config.font_size,
-            HINT_CHARS.chars(),
-        ).expect("Error loading font");
+        println!("{:?}", desktop_window);
+        let glutin_window = glutin::WindowBuilder::new()
+            // .with_decorations(false)
+            // .with_always_on_top(true)
+            // .with_x11_window_type(XWindowType::Splash)
+            .with_override_redirect(true)
+            // .with_transparency(true)
+            .with_dimensions((50, 50).into())
+            .build(&events_loop)
+            .unwrap();
+        let dpi = glutin_window.get_hidpi_factor();
+        glutin_window.set_position(PhysicalPosition::from(desktop_window.pos).to_logical(dpi));
+        println!("{:?}", glutin_window.get_position());
 
-        let dpi = display.gl_window().get_hidpi_factor();
+        // let context = glutin::ContextBuilder::new();
+        // let display = glium::Display::new(gwindow, context, &events_loop).unwrap();
+        // let dpi = display.gl_window().get_hidpi_factor();
+        // display.gl_window().set_position(window.pos.to_logical(dpi));
+
+        // let text_system = glium_text::TextSystem::new(&display);
+        // let font = glium_text::FontTexture::new(
+        //     &display,
+        //     loaded_font.as_slice(),
+        //     app_config.font_size,
+        //     HINT_CHARS.chars(),
+        // ).expect("Error loading font");
+        //
+        // let dpi = display.gl_window().get_hidpi_factor();
         let render_window = RenderWindow {
-            window,
-            text_system,
-            font,
-            display,
+            desktop_window,
+            glutin_window,
+            // text_system,
+            // font,
+            // display,
         };
 
-        let hint = get_next_hint(render_windows.keys().collect(), HINT_CHARS, windows.len());
         render_windows.insert(hint.clone(), render_window);
-        let rw = &render_windows[&hint];
-        let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
-        let (text_width, text_height) = (text.get_width(), text.get_height());
-        let ratio = (text_height / text_width) as f64;
-
-        let window_width = 50.0f64;
-        let window_height = window_width * ratio;
-        let window_size = PhysicalSize::new(window_width, window_height);
+        // let rw = &render_windows[&hint];
+        // let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
+        // let (text_width, text_height) = (text.get_width(), text.get_height());
+        // let ratio = (text_height / text_width) as f64;
+        //
+        // let window_width = 50.0f64;
+        // let window_height = window_width * ratio;
+        // let window_size = PhysicalSize::new(window_width, window_height);
 
         // println!(
         //     "text_width {} text_height {}, ratio {}, window_width {} window_height {}",
         //     text_width, text_height, ratio, window_width, window_height
         //     );
 
-        rw.display
-            .gl_window()
-            .set_inner_size(window_size.to_logical(dpi));
+        // rw.display
+        //     .gl_window()
+        //     .set_inner_size(window_size.to_logical(dpi));
     }
+
+    // We have to ignore the first few events because whenever a new window is created, the old one
+    // is unfocused. However, we don't want close all the windows after the second one is
+    // created. Therefore, we have to count how many events we've already seen so that we can
+    // ignore the first few.
+    let mut unfocused_events_seen = 0;
 
     let mut closed = false;
     while !closed {
-        for (hint, rw) in &render_windows {
-            let (w, h) = rw.display.get_framebuffer_dimensions();
-            let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
-            let text_width = text.get_width();
+        // for (hint, rw) in &render_windows {
+            // let (w, h) = rw.display.get_framebuffer_dimensions();
+            // let text = glium_text::TextDisplay::new(&rw.text_system, &rw.font, &hint);
+            // let text_width = text.get_width();
             // println!("{} {}", w, h);
 
-            #[cfg_attr(rustfmt, rustfmt_skip)]
-            let matrix:[[f32; 4]; 4] = cgmath::Matrix4::new(
-                2.0 / text_width, 0.0, 0.0, 0.0,
-                0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                -1.0, -1.0, 0.0, 1.0f32,
-                ).into();
+            // #[cfg_attr(rustfmt, rustfmt_skip)]
+            // let matrix:[[f32; 4]; 4] = cgmath::Matrix4::new(
+            //     2.0 / text_width, 0.0, 0.0, 0.0,
+            //     0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,
+            //     0.0, 0.0, 1.0, 0.0,
+            //     -1.0, -1.0, 0.0, 1.0f32,
+            //     ).into();
 
-            let mut target = rw.display.draw();
-            target.clear_color(0.0, 0.0, 1.0, 1.0);
-            glium_text::draw(
-                &text,
-                &rw.text_system,
-                &mut target,
-                matrix,
-                (1.0, 1.0, 0.0, 1.0),
-            ).unwrap();
-            target.finish().unwrap();
-        }
+            // let mut target = rw.display.draw();
+            // target.clear_color(0.0, 0.0, 1.0, 1.0);
+            // glium_text::draw(
+            //     &text,
+            //     &rw.text_system,
+            //     &mut target,
+            //     matrix,
+            //     (1.0, 1.0, 0.0, 1.0),
+            // ).unwrap();
+            // target.finish().unwrap();
+        // }
         events_loop.poll_events(|event| match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => closed = true,
-                WindowEvent::KeyboardInput {
+            glutin::Event::WindowEvent { event, .. } => match event {
+                glutin::WindowEvent::Focused(false) => {
+                    unfocused_events_seen += 1;
+                    if render_windows.len() == unfocused_events_seen {
+                        closed = true;
+                    }
+                },
+                glutin::WindowEvent::CloseRequested => closed = true,
+                glutin::WindowEvent::KeyboardInput {
                     input:
-                        KeyboardInput {
+                        glutin::KeyboardInput {
                             virtual_keycode: Some(virtual_code),
                             state,
                             ..
                         },
                     ..
                 } => match (virtual_code, state) {
-                    (VirtualKeyCode::Escape, _) => closed = true,
+                    (glutin::VirtualKeyCode::Escape, _) => closed = true,
                     _ => {
                         println!("{:?}", virtual_code);
 
@@ -240,9 +190,9 @@ fn main() {
                         // I've got to match the enum by variant name and this is the only way I
                         // see.
                         let key_str = format!("{:?}", virtual_code);
-                        if let Some(rw) = &render_windows.get(&key_str.to_lowercase()) {
-                            wm::focus_window(&rw.window);
-                        }
+                        // if let Some(rw) = &render_windows.get(&key_str.to_lowercase()) {
+                        //     wm::focus_window(&rw.window);
+                        // }
                         closed = true;
                     }
                 },
@@ -250,7 +200,7 @@ fn main() {
             },
             _ => {}
         });
-        fps.tick();
+        // fps.tick();
     }
 }
 
