@@ -126,12 +126,9 @@ fn main() {
             rtv,
             dsv,
             glyph_brush,
-            // text_system,
-            // font,
-            // display,
         };
 
-        render_windows.insert(hint.clone(), render_window);
+        render_windows.insert(hint, render_window);
     }
 
     // We have to ignore the first few events because whenever a new window is created, the old one
@@ -182,32 +179,33 @@ fn main() {
         for (hint, render_window) in &mut render_windows {
             render_window
                 .encoder
-                .clear(&render_window.rtv, [0.02, 0.02, 0.02, 1.0]);
+                .clear(&render_window.rtv, [1.00, 0.02, 0.02, 1.0]);
             render_window.encoder.clear_depth(&render_window.dsv, 1.0);
 
             let (width, height, ..) = render_window.rtv.get_dimensions();
             let (width, height) = (f32::from(width), f32::from(height));
 
-            render_window.glyph_brush.queue(gfx_glyph::Section {
-                screen_position: (width / 2.0, 100.0),
-                bounds: (width, height - 100.0),
-                text: "On top",
-                scale: gfx_glyph::Scale::uniform(95.0),
-                color: [0.8, 0.8, 0.8, 1.0],
-                font_id: gfx_glyph::FontId(0),
-                layout: gfx_glyph::Layout::default().h_align(gfx_glyph::HorizontalAlign::Center),
-                z: 0.2,
-            });
-
-            render_window
-                .glyph_brush
-                .draw_queued(
-                    &mut render_window.encoder,
-                    &render_window.rtv,
-                    &render_window.dsv,
-                ).expect("Couldn't submit draw call");
+            // render_window.glyph_brush.queue(gfx_glyph::Section {
+            //     screen_position: (width / 2.0, 100.0),
+            //     bounds: (width, height - 100.0),
+            //     text: "On top",
+            //     scale: gfx_glyph::Scale::uniform(95.0),
+            //     color: [0.8, 0.8, 0.8, 1.0],
+            //     font_id: gfx_glyph::FontId(0),
+            //     layout: gfx_glyph::Layout::default().h_align(gfx_glyph::HorizontalAlign::Center),
+            //     z: 0.2,
+            // });
+            //
+            // render_window
+            //     .glyph_brush
+            //     .draw_queued(
+            //         &mut render_window.encoder,
+            //         &render_window.rtv,
+            //         &render_window.dsv,
+            //     ).expect("Couldn't submit draw call");
 
             render_window.encoder.flush(&mut render_window.device);
+            println!("{:p}", &render_window.glutin_window);
             render_window
                 .glutin_window
                 .swap_buffers()
