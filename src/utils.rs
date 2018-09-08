@@ -14,7 +14,7 @@ fn is_truetype_font(f: String) -> Result<(), String> {
     if family.is_none() || size.is_none() {
         return Err("From font format".to_string());
     }
-    if let Err(e) = size.unwrap().parse::<u32>() {
+    if let Err(e) = size.unwrap().parse::<f32>() {
         return Err(e.description().to_string());
     }
     Ok(())
@@ -61,7 +61,7 @@ pub fn parse_args() -> AppConfig {
     let v: Vec<_> = font.split(':').collect();
     let (font_family, font_size) = (
         v[0].to_string(),
-        v[1].parse::<u32>().unwrap(),
+        v[1].parse::<f32>().unwrap(),
     );
 
     let loaded_font = load_font(&font_family);

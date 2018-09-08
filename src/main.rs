@@ -48,7 +48,7 @@ pub struct RenderWindow<'a, R: gfx::Resources, C: gfx::CommandBuffer<R>, F: gfx:
 #[derive(Debug)]
 pub struct AppConfig {
     pub font_family: String,
-    pub font_size: u32,
+    pub font_size: f32,
     pub loaded_font: Vec<u8>,
 }
 
@@ -83,7 +83,7 @@ fn main() {
         let bounds = scope
             .pixel_bounds(Section {
                 text: &hint,
-                scale: gfx_glyph::Scale::uniform(95.0),
+                scale: gfx_glyph::Scale::uniform(app_config.font_size),
                 font_id: gfx_glyph::FontId(0),
                 ..Section::default()
             }).expect("Somehow this didn't have pixel bounds");
@@ -198,7 +198,7 @@ fn main() {
             render_window.glyph_brush.queue(Section {
                 screen_position: (width / 2.0, height / 2.0),
                 text: hint,
-                scale: gfx_glyph::Scale::uniform(95.0),
+                scale: gfx_glyph::Scale::uniform(app_config.font_size),
                 color: [0.8, 0.8, 0.8, 1.0],
                 font_id: gfx_glyph::FontId(0),
                 layout: gfx_glyph::Layout::default()
