@@ -53,7 +53,7 @@ pub fn parse_args() -> AppConfig {
                 .long("font")
                 .takes_value(true)
                 .validator(is_truetype_font)
-                .default_value("DejaVu Sans Mono:72")
+                .default_value("Mono:72")
                 .help("Use a specific TrueType font with this format: family:size"),
         ).get_matches();
 

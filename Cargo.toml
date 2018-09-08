@@ -12,7 +12,6 @@ i3ipc = { version = "0.8", optional = true }
 fps_clock = "2.0"
 font-loader = "0.7"
 itertools = "0.7"
-rusttype = "0.7"
 glutin = "0.18"
 gfx = "0.17"
 gfx_glyph = "0.12"

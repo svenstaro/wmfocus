@@ -8,13 +8,12 @@ extern crate gfx_glyph;
 extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate itertools;
-extern crate rusttype;
 
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::{format, Device};
-use gfx_glyph::GlyphBrushBuilder;
-use glutin::dpi::{PhysicalPosition};
-use glutin::os::unix::WindowBuilderExt;
+use gfx_glyph::{GlyphBrushBuilder, GlyphCalculatorBuilder, GlyphCruncher, Section};
+use glutin::dpi::PhysicalPosition;
+use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::GlContext;
 use std::collections::HashMap;
 
@@ -65,8 +64,6 @@ fn main() {
     // Limit FPS to preserve performance
     let mut fps = fps_clock::FpsClock::new(30);
 
-    // let font = Font::from_bytes(&loaded_font).expect("Couldn't load font");
-
     let mut events_loop = glutin::EventsLoop::new();
     let mut render_windows = HashMap::new();
     for desktop_window in &desktop_windows {
@@ -77,26 +74,35 @@ fn main() {
             HINT_CHARS,
             desktop_windows.len(),
         );
-        // let hint_text = font.layout(
-        //     &hint,
-        //     rusttype::Scale::uniform(app_config.font_size as f32),
-        //     rusttype::Point { x: 0.0, y: 0.0 },
-        // );
-        // let (width, height) = hint_text.fold((0, 0), |acc, current| {
-        //     (
-        //         max(acc.0, current.pixel_bounding_box().unwrap().max.x),
-        //         max(acc.1, current.pixel_bounding_box().unwrap().height()),
-        //     )
-        // });
+
+        // Figure out how large the window actually needs to be.
+        let mut glyph_calc =
+            GlyphCalculatorBuilder::using_font_bytes(&app_config.loaded_font).build();
+
+        let mut scope = glyph_calc.cache_scope();
+        let bounds = scope
+            .pixel_bounds(Section {
+                text: &hint,
+                scale: gfx_glyph::Scale::uniform(95.0),
+                font_id: gfx_glyph::FontId(0),
+                ..Section::default()
+            }).expect("Somehow this didn't have pixel bounds");
+
+        let border_factor = 1.0 + 0.2;
+        let (width, height) = (
+            (bounds.width() as f32 * border_factor).round() as u32,
+            (bounds.height() as f32 * border_factor).round() as u32,
+        );
 
         println!("{:?}", desktop_window);
         let window_builder = glutin::WindowBuilder::new()
             // .with_decorations(false)
             // .with_always_on_top(true)
-            // .with_x11_window_type(XWindowType::Splash)
+            .with_title(crate_name!())
+            .with_class(crate_name!().to_string(), crate_name!().to_string())
             .with_override_redirect(true)
-            // .with_transparency(true)
-            .with_dimensions((500, 500).into());
+            .with_transparency(true)
+            .with_dimensions((width, height).into());
 
         let context = glutin::ContextBuilder::new();
         let (glutin_window, mut device, mut factory, mut rtv, mut dsv) =
@@ -108,8 +114,6 @@ fn main() {
 
         let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(&app_config.loaded_font)
             .initial_cache_size((512, 512))
-            // Enable depth testing with less-equal drawing and update the depth buffer
-            .depth_test(gfx::preset::depth::LESS_EQUAL_WRITE)
             .build(factory.clone());
 
         let mut encoder = factory.create_command_buffer().into();
@@ -177,35 +181,41 @@ fn main() {
         });
 
         for (hint, render_window) in &mut render_windows {
+            unsafe {
+                render_window
+                    .glutin_window
+                    .make_current()
+                    .expect("Couldn't activate context");
+            }
             render_window
                 .encoder
-                .clear(&render_window.rtv, [1.00, 0.02, 0.02, 1.0]);
+                .clear(&render_window.rtv, [1.00, 0.02, 0.02, 0.5]);
             render_window.encoder.clear_depth(&render_window.dsv, 1.0);
 
             let (width, height, ..) = render_window.rtv.get_dimensions();
             let (width, height) = (f32::from(width), f32::from(height));
 
-            // render_window.glyph_brush.queue(gfx_glyph::Section {
-            //     screen_position: (width / 2.0, 100.0),
-            //     bounds: (width, height - 100.0),
-            //     text: "On top",
-            //     scale: gfx_glyph::Scale::uniform(95.0),
-            //     color: [0.8, 0.8, 0.8, 1.0],
-            //     font_id: gfx_glyph::FontId(0),
-            //     layout: gfx_glyph::Layout::default().h_align(gfx_glyph::HorizontalAlign::Center),
-            //     z: 0.2,
-            // });
-            //
-            // render_window
-            //     .glyph_brush
-            //     .draw_queued(
-            //         &mut render_window.encoder,
-            //         &render_window.rtv,
-            //         &render_window.dsv,
-            //     ).expect("Couldn't submit draw call");
+            render_window.glyph_brush.queue(Section {
+                screen_position: (width / 2.0, height / 2.0),
+                text: hint,
+                scale: gfx_glyph::Scale::uniform(95.0),
+                color: [0.8, 0.8, 0.8, 1.0],
+                font_id: gfx_glyph::FontId(0),
+                layout: gfx_glyph::Layout::default()
+                    .h_align(gfx_glyph::HorizontalAlign::Center)
+                    .v_align(gfx_glyph::VerticalAlign::Center),
+                ..Section::default()
+            });
+
+            render_window
+                .glyph_brush
+                .draw_queued(
+                    &mut render_window.encoder,
+                    &render_window.rtv,
+                    &render_window.dsv,
+                ).expect("Couldn't submit draw call");
 
             render_window.encoder.flush(&mut render_window.device);
-            println!("{:p}", &render_window.glutin_window);
             render_window
                 .glutin_window
                 .swap_buffers()
