@@ -17,6 +17,7 @@ gfx = "0.17"
 gfx_glyph = "0.12"
 gfx_window_glutin = "0.26"
 gfx_device_gl = "0.15"
+css-color-parser = "0.1"
 
 [profile.release]
 lto = true

@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate css_color_parser;
 extern crate font_loader;
 extern crate fps_clock;
 extern crate gfx;
@@ -50,6 +51,12 @@ pub struct AppConfig {
     pub font_family: String,
     pub font_size: f32,
     pub loaded_font: Vec<u8>,
+    pub margin: f32,
+    pub text_color: (f32, f32, f32, f32),
+    pub bg_color: (f32, f32, f32, f32),
+    pub horizontal_align: utils::HorizontalAlign,
+    pub vertical_align: utils::VerticalAlign,
+    pub fill: bool,
 }
 
 static HINT_CHARS: &'static str = "sadfjklewcmpgh";
@@ -187,9 +194,15 @@ fn main() {
                     .make_current()
                     .expect("Couldn't activate context");
             }
-            render_window
-                .encoder
-                .clear(&render_window.rtv, [1.00, 0.02, 0.02, 0.5]);
+            render_window.encoder.clear(
+                &render_window.rtv,
+                [
+                    app_config.bg_color.0,
+                    app_config.bg_color.1,
+                    app_config.bg_color.2,
+                    app_config.bg_color.3,
+                ],
+            );
             render_window.encoder.clear_depth(&render_window.dsv, 1.0);
 
             let (width, height, ..) = render_window.rtv.get_dimensions();
@@ -199,7 +212,12 @@ fn main() {
                 screen_position: (width / 2.0, height / 2.0),
                 text: hint,
                 scale: gfx_glyph::Scale::uniform(app_config.font_size),
-                color: [0.8, 0.8, 0.8, 1.0],
+                color: [
+                    app_config.text_color.0,
+                    app_config.text_color.1,
+                    app_config.text_color.2,
+                    app_config.text_color.3,
+                ],
                 font_id: gfx_glyph::FontId(0),
                 layout: gfx_glyph::Layout::default()
                     .h_align(gfx_glyph::HorizontalAlign::Center)
