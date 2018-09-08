@@ -9,7 +9,7 @@ use AppConfig;
 
 /// Checks whether the provided fontconfig font `f` is valid.
 fn is_truetype_font(f: String) -> Result<(), String> {
-    let v: Vec<_> = f.split(":").collect();
+    let v: Vec<_> = f.split(':').collect();
     let (family, size) = (v.get(0), v.get(1));
     if family.is_none() || size.is_none() {
         return Err("From font format".to_string());
@@ -21,7 +21,7 @@ fn is_truetype_font(f: String) -> Result<(), String> {
 }
 
 /// Load a system font.
-fn load_font<'a>(font_family: &str) -> Vec<u8> {
+fn load_font(font_family: &str) -> Vec<u8> {
     let font_family_property = system_fonts::FontPropertyBuilder::new()
         .family(font_family)
         .build();
@@ -58,10 +58,10 @@ pub fn parse_args() -> AppConfig {
         ).get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
-    let v: Vec<_> = font.split(":").collect();
+    let v: Vec<_> = font.split(':').collect();
     let (font_family, font_size) = (
-        v.get(0).unwrap().to_string(),
-        v.get(1).unwrap().parse::<u32>().unwrap(),
+        v[0].to_string(),
+        v[1].parse::<u32>().unwrap(),
     );
 
     let loaded_font = load_font(&font_family);

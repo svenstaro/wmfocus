@@ -46,8 +46,7 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
                     pos: (
                         (node.rect.0),
                         (node.rect.1 - node.deco_rect.3),
-                    )
-                        .into(),
+                    ),
                 };
                 windows.push(window);
             }
