@@ -13,7 +13,7 @@ extern crate itertools;
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::{format, Device};
 use gfx_glyph::{GlyphBrushBuilder, GlyphCalculatorBuilder, GlyphCruncher, Section};
-use glutin::dpi::{PhysicalPosition, PhysicalSize};
+use glutin::dpi::{PhysicalSize, PhysicalPosition};
 use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::GlContext;
 use std::collections::HashMap;
@@ -128,17 +128,7 @@ fn main() {
             .initial_cache_size((512, 512))
             .build(factory.clone());
 
-        let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
-
-        encoder.clear(
-            &rtv,
-            [
-                app_config.bg_color.0,
-                app_config.bg_color.1,
-                app_config.bg_color.2,
-                app_config.bg_color.3,
-            ],
-        );
+        let mut encoder = factory.create_command_buffer().into();
 
         let dpi = glutin_window.get_hidpi_factor();
         println!("dpi {:?}", dpi);
