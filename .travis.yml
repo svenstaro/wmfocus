@@ -11,6 +11,9 @@ rust:
   - beta
   - nightly
 
+script:
+  - cargo build --all-features
+
 matrix:
   allow_failures:
     - rust: nightly
