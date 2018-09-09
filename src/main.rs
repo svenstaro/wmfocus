@@ -13,7 +13,7 @@ extern crate itertools;
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::{format, Device};
 use gfx_glyph::{GlyphBrushBuilder, GlyphCalculatorBuilder, GlyphCruncher, Section};
-use glutin::dpi::PhysicalPosition;
+use glutin::dpi::{PhysicalPosition, PhysicalSize};
 use glutin::os::unix::{WindowBuilderExt, XWindowType};
 use glutin::GlContext;
 use std::collections::HashMap;
@@ -34,6 +34,7 @@ pub struct DesktopWindow {
     id: i64,
     title: String,
     pos: (i32, i32),
+    size: (i32, i32),
 }
 
 pub struct RenderWindow<'a, R: gfx::Resources, C: gfx::CommandBuffer<R>, F: gfx::Factory<R>, T, G> {
@@ -54,9 +55,9 @@ pub struct AppConfig {
     pub margin: f32,
     pub text_color: (f32, f32, f32, f32),
     pub bg_color: (f32, f32, f32, f32),
+    pub fill: bool,
     pub horizontal_align: utils::HorizontalAlign,
     pub vertical_align: utils::VerticalAlign,
-    pub fill: bool,
 }
 
 static HINT_CHARS: &'static str = "sadfjklewcmpgh";
@@ -96,10 +97,14 @@ fn main() {
             }).expect("Somehow this didn't have pixel bounds");
 
         let border_factor = 1.0 + 0.2;
-        let (width, height) = (
-            (bounds.width() as f32 * border_factor).round() as u32,
-            (bounds.height() as f32 * border_factor).round() as u32,
-        );
+        let (width, height) = if app_config.fill {
+            (desktop_window.size.0 as u32, desktop_window.size.1 as u32)
+        } else {
+            (
+                (bounds.width() as f32 * border_factor).round() as u32,
+                (bounds.height() as f32 * border_factor).round() as u32,
+            )
+        };
 
         println!("{:?}", desktop_window);
         let window_builder = glutin::WindowBuilder::new()
@@ -109,7 +114,7 @@ fn main() {
             .with_class(crate_name!().to_string(), crate_name!().to_string())
             .with_override_redirect(true)
             .with_transparency(true)
-            .with_dimensions((width, height).into());
+            .with_dimensions((width as f64 / 1.166667, height as f64 / 1.166667).into());
 
         let context = glutin::ContextBuilder::new();
         let (glutin_window, mut device, mut factory, mut rtv, mut dsv) =
@@ -123,10 +128,43 @@ fn main() {
             .initial_cache_size((512, 512))
             .build(factory.clone());
 
-        let mut encoder = factory.create_command_buffer().into();
+        let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
+
+        encoder.clear(
+            &rtv,
+            [
+                app_config.bg_color.0,
+                app_config.bg_color.1,
+                app_config.bg_color.2,
+                app_config.bg_color.3,
+            ],
+        );
 
         let dpi = glutin_window.get_hidpi_factor();
-        glutin_window.set_position(PhysicalPosition::from(desktop_window.pos).to_logical(dpi));
+        println!("dpi {:?}", dpi);
+
+        let horizontal_pos = match app_config.horizontal_align {
+            utils::HorizontalAlign::Left => desktop_window.pos.0,
+            utils::HorizontalAlign::Center => {
+                desktop_window.pos.0 + desktop_window.size.0 / 2 - width as i32 / 2
+            }
+            utils::HorizontalAlign::Right => {
+                desktop_window.pos.0 + desktop_window.size.0 - width as i32
+            }
+        };
+
+        let vertical_pos = match app_config.vertical_align {
+            utils::VerticalAlign::Top => desktop_window.pos.1,
+            utils::VerticalAlign::Center => {
+                desktop_window.pos.1 + desktop_window.size.1 / 2 - height as i32 / 2
+            }
+            utils::VerticalAlign::Bottom => {
+                desktop_window.pos.1 + desktop_window.size.1 - height as i32
+            }
+        };
+
+        glutin_window
+            .set_position(PhysicalPosition::from((horizontal_pos, vertical_pos)).to_logical(dpi));
         println!("{:?}", glutin_window.get_position());
 
         let render_window = RenderWindow {

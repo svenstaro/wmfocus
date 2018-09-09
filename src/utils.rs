@@ -168,9 +168,15 @@ pub fn parse_args() -> AppConfig {
         bg_color_unparsed.b as f32 / 255.0,
         bg_color_unparsed.a,
     );
-    let horizontal_align = value_t!(matches, "horizontal_align", HorizontalAlign).unwrap();
-    let vertical_align = value_t!(matches, "vertical_align", VerticalAlign).unwrap();
-    let fill = value_t!(matches, "fill", bool).unwrap_or(false);
+    let fill = matches.is_present("fill");
+    let (horizontal_align, vertical_align) = if fill {
+        (HorizontalAlign::Center, VerticalAlign::Center)
+    } else {
+        (
+            value_t!(matches, "horizontal_align", HorizontalAlign).unwrap(),
+            value_t!(matches, "vertical_align", VerticalAlign).unwrap(),
+        )
+    };
 
     let loaded_font = load_font(&font_family);
 
@@ -183,9 +189,9 @@ pub fn parse_args() -> AppConfig {
         margin,
         text_color,
         bg_color,
+        fill,
         horizontal_align,
         vertical_align,
-        fill,
     }
 }
 

@@ -43,10 +43,8 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
                 let window = DesktopWindow {
                     id: node.id,
                     title: node.name.clone().unwrap_or_default(),
-                    pos: (
-                        (node.rect.0),
-                        (node.rect.1 - node.deco_rect.3),
-                    ),
+                    pos: ((node.rect.0), (node.rect.1 - node.deco_rect.3)),
+                    size: ((node.rect.2), (node.rect.3 + node.deco_rect.3)),
                 };
                 windows.push(window);
             }
@@ -71,12 +69,6 @@ pub fn get_windows() -> Vec<DesktopWindow> {
         windows.extend(crawl_windows(&root_node, &workspace));
     }
     windows
-
-    // request and print the i3 version
-    // println!("{:?}", connection.get_tree().unwrap());
-
-    // fullscreen the focused window
-    // connection.run_command("fullscreen").unwrap();
 }
 
 /// Focus a specific `window`.
