@@ -13,8 +13,8 @@ extern crate itertools;
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::{format, Device};
 use gfx_glyph::{GlyphBrushBuilder, GlyphCalculatorBuilder, GlyphCruncher, Section};
-use glutin::dpi::{PhysicalSize, PhysicalPosition};
-use glutin::os::unix::{WindowBuilderExt, XWindowType};
+use glutin::dpi::PhysicalPosition;
+use glutin::os::unix::WindowBuilderExt;
 use glutin::GlContext;
 use std::collections::HashMap;
 
