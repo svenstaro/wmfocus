@@ -1,6 +1,4 @@
-# wmfocus
-
-[![Build Status](https://travis-ci.com/svenstaro/wmfocus.svg?branch=master)](https://travis-ci.com/svenstaro/wmfocus)
+# wmfocus [![Build Status](https://travis-ci.com/svenstaro/wmfocus.svg?branch=master)](https://travis-ci.com/svenstaro/wmfocus)
 
 Visually focus windows by label
 
