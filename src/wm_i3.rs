@@ -75,6 +75,8 @@ pub fn get_windows() -> Vec<DesktopWindow> {
 pub fn focus_window(window: &DesktopWindow) {
     let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
     let command_str = format!("[con_id=\"{}\"] focus", window.id);
-    let command = connection.run_command(&command_str);
-    println!("{:?}", command);
+    let command = connection
+        .run_command(&command_str)
+        .expect("Couldn't communicate with i3");
+    info!("Sending to i3: {:?}", command);
 }

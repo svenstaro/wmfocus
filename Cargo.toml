@@ -18,6 +18,8 @@ gfx_glyph = "0.12"
 gfx_window_glutin = "0.26"
 gfx_device_gl = "0.15"
 css-color-parser = "0.1"
+pretty_env_logger = "0.2"
+log = "0.4"
 
 [profile.release]
 lto = true

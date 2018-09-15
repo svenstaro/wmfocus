@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate log;
+extern crate pretty_env_logger;
 extern crate css_color_parser;
 extern crate font_loader;
 extern crate fps_clock;
@@ -73,6 +76,10 @@ fn main() {
     let mut fps = fps_clock::FpsClock::new(30);
 
     let mut events_loop = glutin::EventsLoop::new();
+    let mut monitors = events_loop.get_available_monitors();
+    for m in monitors {
+        println!("{:?}", m);
+    }
     let mut render_windows = HashMap::new();
     for desktop_window in &desktop_windows {
         // We need to estimate the font size before rendering because we want the window to only be
@@ -106,14 +113,16 @@ fn main() {
             )
         };
 
-        println!("{:?}", desktop_window);
+        debug!("Spawning RenderWindow for this DesktopWindow: {:?}", desktop_window);
         let window_builder = glutin::WindowBuilder::new()
-            // .with_decorations(false)
-            // .with_always_on_top(true)
+            .with_always_on_top(true)
             .with_title(crate_name!())
             .with_class(crate_name!().to_string(), crate_name!().to_string())
             .with_override_redirect(true)
             .with_transparency(true)
+            // .with_visibility(false)
+            // TODO fix this magic value by getting DPI directly from screen where the window
+            // will spawn.
             .with_dimensions((width as f64 / 1.166667, height as f64 / 1.166667).into());
 
         let context = glutin::ContextBuilder::new();
@@ -131,7 +140,6 @@ fn main() {
         let mut encoder = factory.create_command_buffer().into();
 
         let dpi = glutin_window.get_hidpi_factor();
-        println!("dpi {:?}", dpi);
 
         let horizontal_pos = match app_config.horizontal_align {
             utils::HorizontalAlign::Left => desktop_window.pos.0,
@@ -155,7 +163,6 @@ fn main() {
 
         glutin_window
             .set_position(PhysicalPosition::from((horizontal_pos, vertical_pos)).to_logical(dpi));
-        println!("{:?}", glutin_window.get_position());
 
         let render_window = RenderWindow {
             desktop_window,
@@ -198,8 +205,7 @@ fn main() {
                 } => match (virtual_code, state) {
                     (glutin::VirtualKeyCode::Escape, _) => closed = true,
                     _ => {
-                        println!("{:?}", virtual_code);
-
+                        debug!("Received input: {:?}", virtual_code);
                         // So this is probably fairly hacky but what am I to do!
                         // I've got to match the enum by variant name and this is the only way I
                         // see.

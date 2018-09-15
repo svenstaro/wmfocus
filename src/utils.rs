@@ -49,6 +49,16 @@ impl FromStr for VerticalAlign {
     }
 }
 
+/// Return `true` if a tuple `container` contains a rectangle given by `rect`.
+///
+/// The notation of the tuples is `(x, y, width, height)`.
+fn contains(container: (u32, u32, u32, u32), rect: (u32, u32, u32, u32)) -> bool {
+    return rect.0 >= container.0
+        && rect.1 >= container.0
+        && rect.0 + rect.2 <= container.0 + container.2
+        && rect.1 + rect.3 <= container.1 + container.3;
+}
+
 /// Checks whether the provided fontconfig font `f` is valid.
 fn is_truetype_font(f: String) -> Result<(), String> {
     let v: Vec<_> = f.split(':').collect();
@@ -180,8 +190,6 @@ pub fn parse_args() -> AppConfig {
 
     let loaded_font = load_font(&font_family);
 
-    println!("{:?} x {:?}", text_color, bg_color);
-
     AppConfig {
         font_family,
         font_size,
@@ -218,6 +226,6 @@ pub fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: u
             ret = folded;
         }
     }
-    println!("generated {}", ret);
+    debug!("Returning next hint: {}", ret);
     ret
 }
