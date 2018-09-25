@@ -136,7 +136,7 @@ pub fn parse_args() -> AppConfig {
                 .long("bgcolor")
                 .takes_value(true)
                 .validator(is_valid_color)
-                .default_value("rgba(30, 30, 30, 0.8)")
+                .default_value("rgba(30, 30, 30, 0.3)")
                 .display_order(51)
                 .help("Background color (CSS notation)"))
         .arg(

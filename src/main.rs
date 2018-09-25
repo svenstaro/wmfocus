@@ -43,9 +43,7 @@ pub struct DesktopWindow {
 pub struct RenderWindow<'a> {
     desktop_window: &'a DesktopWindow,
     cairo_context: cairo::Context,
-    size: (u16, u16),
-    margin_size: (f64, f64),
-    text_extents: cairo::TextExtents,
+    draw_pos: (f64, f64),
 }
 
 #[derive(Debug)]
@@ -102,8 +100,8 @@ fn main() {
             (
                 desktop_window.size.0 as u16,
                 desktop_window.size.1 as u16,
-                0.0,
-                0.0,
+                (f64::from(desktop_window.size.0) - text_extents.width) / 2.0,
+                (f64::from(desktop_window.size.1) - text_extents.height) / 2.0,
             )
         } else {
             let margin_factor = 1.0 + 0.2;
@@ -114,6 +112,16 @@ fn main() {
                 ((text_extents.height * margin_factor) - text_extents.height) / 2.0,
             )
         };
+
+        // Due to the way cairo lays out text, we'll have to calculate the actual coordinates to
+        // put the cursor. See:
+        // https://www.cairographics.org/samples/text_align_center/
+        // https://www.cairographics.org/samples/text_extents/
+        // https://www.cairographics.org/tutorial/#L1understandingtext
+        let draw_pos = (
+            margin_width - text_extents.x_bearing,
+            text_extents.height + margin_height - (text_extents.height + text_extents.y_bearing),
+        );
 
         debug!(
             "Spawning RenderWindow for this DesktopWindow: {:?}",
@@ -142,6 +150,7 @@ fn main() {
 
         let xcb_window_id = conn.generate_id();
 
+        // Create the actual window.
         xcb::create_window(
             &conn,
             xcb::COPY_FROM_PARENT as u8,
@@ -196,9 +205,7 @@ fn main() {
         let render_window = RenderWindow {
             desktop_window,
             cairo_context,
-            size: (width, height),
-            margin_size: (margin_width, margin_height),
-            text_extents,
+            draw_pos,
         };
 
         render_windows.insert(hint, render_window);
@@ -245,7 +252,6 @@ fn main() {
                 match r {
                     xcb::EXPOSE => {
                         for (hint, rw) in &render_windows {
-                            let e = rw.text_extents;
                             rw.cairo_context.set_source_rgba(
                                 app_config.bg_color.0,
                                 app_config.bg_color.1,
@@ -259,10 +265,7 @@ fn main() {
                                 FontWeight::Normal,
                             );
                             rw.cairo_context.set_font_size(app_config.font_size);
-                            rw.cairo_context.move_to(
-                                rw.margin_size.0 - e.x_bearing,
-                                e.height + rw.margin_size.1 - (e.height + e.y_bearing),
-                            );
+                            rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
                             rw.cairo_context.set_source_rgba(
                                 app_config.text_color.0,
                                 app_config.text_color.1,
