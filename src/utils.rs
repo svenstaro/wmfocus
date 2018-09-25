@@ -2,12 +2,12 @@ use std::error::Error;
 use std::iter;
 use std::str::FromStr;
 
+use cairo;
 use clap::{App, Arg};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
 use xcb;
-use cairo;
 use xcb::ffi::xcb_visualid_t;
 
 use AppConfig;
@@ -56,10 +56,10 @@ impl FromStr for VerticalAlign {
 ///
 /// The notation of the tuples is `(x, y, width, height)`.
 fn contains(container: (u32, u32, u32, u32), rect: (u32, u32, u32, u32)) -> bool {
-    return rect.0 >= container.0
+    rect.0 >= container.0
         && rect.1 >= container.0
         && rect.0 + rect.2 <= container.0 + container.2
-        && rect.1 + rect.3 <= container.1 + container.3;
+        && rect.1 + rect.3 <= container.1 + container.3
 }
 
 /// Checks whether the provided fontconfig font `f` is valid.
@@ -169,17 +169,17 @@ pub fn parse_args() -> AppConfig {
     let margin = value_t!(matches, "margin", f32).unwrap();
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
     let text_color = (
-        text_color_unparsed.r as f32 / 255.0,
-        text_color_unparsed.g as f32 / 255.0,
-        text_color_unparsed.b as f32 / 255.0,
-        text_color_unparsed.a,
+        f64::from(text_color_unparsed.r) / 255.0,
+        f64::from(text_color_unparsed.g) / 255.0,
+        f64::from(text_color_unparsed.b) / 255.0,
+        f64::from(text_color_unparsed.a),
     );
     let bg_color_unparsed = value_t!(matches, "bg_color", CssColor).unwrap();
     let bg_color = (
-        bg_color_unparsed.r as f32 / 255.0,
-        bg_color_unparsed.g as f32 / 255.0,
-        bg_color_unparsed.b as f32 / 255.0,
-        bg_color_unparsed.a,
+        f64::from(bg_color_unparsed.r) / 255.0,
+        f64::from(bg_color_unparsed.g) / 255.0,
+        f64::from(bg_color_unparsed.b) / 255.0,
+        f64::from(bg_color_unparsed.a),
     );
     let fill = matches.is_present("fill");
     let (horizontal_align, vertical_align) = if fill {
@@ -233,7 +233,7 @@ pub fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: u
     ret
 }
 
-pub fn find_visual<'a>(conn: &'a xcb::Connection, visual: xcb_visualid_t) -> Option<xcb::Visualtype> {
+pub fn find_visual(conn: &xcb::Connection, visual: xcb_visualid_t) -> Option<xcb::Visualtype> {
     for screen in conn.get_setup().roots() {
         for depth in screen.allowed_depths() {
             for vis in depth.visuals() {
@@ -250,11 +250,10 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> cairo::TextExten
     // Create a buffer image that should be large enough.
     // TODO: Figure out the maximum size from the largest window on the desktop.
     // For now we'll use made-up maximum values.
-    let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 1024, 1024).expect("Couldn't create ImageSurface");
+    let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 1024, 1024)
+        .expect("Couldn't create ImageSurface");
     let cr = cairo::Context::new(&surface);
     cr.select_font_face(family, cairo::FontSlant::Normal, cairo::FontWeight::Normal);
     cr.set_font_size(size);
-    let e = cr.text_extents(text);
-    println!("text: {}, width: {}, height: {}, x_bearing: {}, y_bearing: {}", text, e.width, e.height, e.x_bearing, e.y_bearing);
     cr.text_extents(text)
 }

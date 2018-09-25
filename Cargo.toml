@@ -26,5 +26,9 @@ features = ["xcb"]
 version = "0.2"
 features = ["keysyms"]
 
+[dependencies.x11]
+version = "2.18.1"
+features = ["xlib"]
+
 [profile.release]
 lto = true
