@@ -5,6 +5,8 @@ addons:
   apt:
     packages:
       - libfontconfig1-dev
+      - libxkbcommon-dev
+      - libxcb-keysyms1-dev
 
 rust:
   - stable
