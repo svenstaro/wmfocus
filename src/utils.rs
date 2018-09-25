@@ -6,6 +6,9 @@ use clap::{App, Arg};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
+use xcb;
+use cairo;
+use xcb::ffi::xcb_visualid_t;
 
 use AppConfig;
 
@@ -162,7 +165,7 @@ pub fn parse_args() -> AppConfig {
 
     let font = value_t!(matches, "font", String).unwrap();
     let v: Vec<_> = font.split(':').collect();
-    let (font_family, font_size) = (v[0].to_string(), v[1].parse::<f32>().unwrap());
+    let (font_family, font_size) = (v[0].to_string(), v[1].parse::<f64>().unwrap());
     let margin = value_t!(matches, "margin", f32).unwrap();
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
     let text_color = (
@@ -228,4 +231,28 @@ pub fn get_next_hint(current_hints: Vec<&String>, hint_chars: &str, max_count: u
     }
     debug!("Returning next hint: {}", ret);
     ret
+}
+
+pub fn find_visual<'a>(conn: &'a xcb::Connection, visual: xcb_visualid_t) -> Option<xcb::Visualtype> {
+    for screen in conn.get_setup().roots() {
+        for depth in screen.allowed_depths() {
+            for vis in depth.visuals() {
+                if visual == vis.visual_id() {
+                    return Some(vis);
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn extents_for_text(text: &str, family: &str, size: f64) -> cairo::TextExtents {
+    // Create a buffer image that should be large enough.
+    // TODO: Figure out the maximum size from the largest window on the desktop.
+    // For now we'll use made-up maximum values.
+    let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 1024, 1024).expect("Couldn't create ImageSurface");
+    let cr = cairo::Context::new(&surface);
+    cr.select_font_face(family, cairo::FontSlant::Normal, cairo::FontWeight::Normal);
+    cr.set_font_size(size);
+    cr.text_extents(text)
 }
