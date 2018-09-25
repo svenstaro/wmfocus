@@ -2,12 +2,12 @@
 extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate pretty_env_logger;
+extern crate cairo;
+extern crate cairo_sys;
 extern crate css_color_parser;
 extern crate font_loader;
 extern crate itertools;
-extern crate cairo;
-extern crate cairo_sys;
+extern crate pretty_env_logger;
 extern crate xcb;
 extern crate xcb_util;
 extern crate xkbcommon;
@@ -18,9 +18,8 @@ use xcb::ffi::xcb_visualid_t;
 use xcb::Visualtype;
 use xkbcommon::xkb;
 
-use std::iter::Iterator;
 use std::collections::HashMap;
-
+use std::iter::Iterator;
 
 mod utils;
 
@@ -46,6 +45,7 @@ pub struct RenderWindow<'a> {
     xcb_window_id: u32,
     cairo_context: cairo::Context,
     size: (u16, u16),
+    margin_size: (f64, f64),
     text_extents: cairo::TextExtents,
 }
 
@@ -97,18 +97,24 @@ fn main() {
         );
 
         // Figure out how large the window actually needs to be.
-        let text_extents = utils::extents_for_text(&hint, &app_config.font_family, app_config.font_size);
-        let (width, height) = if app_config.fill {
-            (desktop_window.size.0 as u16, desktop_window.size.1 as u16)
+        let text_extents =
+            utils::extents_for_text(&hint, &app_config.font_family, app_config.font_size);
+        let (width, height, margin_width, margin_height) = if app_config.fill {
+            (desktop_window.size.0 as u16, desktop_window.size.1 as u16, 0.0, 0.0)
         } else {
-            let border_factor = 1.0 + 0.2;
+            let margin_factor = 1.0 + 0.2;
             (
-                (text_extents.width * border_factor).round() as u16,
-                (text_extents.height * border_factor).round() as u16,
+                (text_extents.width * margin_factor).round() as u16,
+                (text_extents.height * margin_factor).round() as u16,
+                ((text_extents.width * margin_factor) - text_extents.width) / 2.0,
+                ((text_extents.height * margin_factor) - text_extents.height) / 2.0,
             )
         };
 
-        debug!("Spawning RenderWindow for this DesktopWindow: {:?}", desktop_window);
+        debug!(
+            "Spawning RenderWindow for this DesktopWindow: {:?}",
+            desktop_window
+        );
 
         let x = match app_config.horizontal_align {
             utils::HorizontalAlign::Left => desktop_window.pos.0 as i16,
@@ -165,7 +171,9 @@ fn main() {
 
         let mut visual = utils::find_visual(&conn, screen.root_visual()).unwrap();
         let cairo_xcb_conn = unsafe {
-            cairo::XCBConnection::from_raw_none(conn.get_raw_conn() as *mut cairo_sys::xcb_connection_t)
+            cairo::XCBConnection::from_raw_none(
+                conn.get_raw_conn() as *mut cairo_sys::xcb_connection_t
+            )
         };
         let cairo_xcb_drawable = cairo::XCBDrawable(xcb_window_id);
         let raw_visualtype = &mut visual.base as *mut xcb::ffi::xcb_visualtype_t;
@@ -186,6 +194,7 @@ fn main() {
             xcb_window_id,
             cairo_context,
             size: (width, height),
+            margin_size: (margin_width, margin_height),
             text_extents,
         };
 
@@ -232,9 +241,16 @@ fn main() {
                             let e = rw.text_extents;
                             rw.cairo_context.set_source_rgb(1.0, 1.0, 1.0);
                             rw.cairo_context.paint();
-                            rw.cairo_context.select_font_face(&app_config.font_family, FontSlant::Normal, FontWeight::Normal);
+                            rw.cairo_context.select_font_face(
+                                &app_config.font_family,
+                                FontSlant::Normal,
+                                FontWeight::Normal,
+                            );
                             rw.cairo_context.set_font_size(app_config.font_size);
-                            rw.cairo_context.move_to(0.0 + e.x_bearing / 2.0, rw.size.1 as f64 + e.y_bearing / 2.0);
+                            rw.cairo_context.move_to(
+                                rw.margin_size.0 - e.x_bearing,
+                                e.height + rw.margin_size.1 - (e.height + e.y_bearing),
+                            );
                             rw.cairo_context.set_source_rgb(0.0, 0.0, 0.0);
                             rw.cairo_context.show_text(&hint);
                             rw.cairo_context.get_target().flush();

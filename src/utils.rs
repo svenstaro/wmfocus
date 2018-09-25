@@ -254,5 +254,7 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> cairo::TextExten
     let cr = cairo::Context::new(&surface);
     cr.select_font_face(family, cairo::FontSlant::Normal, cairo::FontWeight::Normal);
     cr.set_font_size(size);
+    let e = cr.text_extents(text);
+    println!("text: {}, width: {}, height: {}, x_bearing: {}, y_bearing: {}", text, e.width, e.height, e.x_bearing, e.y_bearing);
     cr.text_extents(text)
 }
