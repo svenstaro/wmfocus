@@ -270,7 +270,6 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
     rw.cairo_context.paint();
     rw.cairo_context.set_operator(cairo::Operator::Over);
 
-    // Paint already selected chars.
     rw.cairo_context.select_font_face(
         &app_config.font_family,
         FontSlant::Normal,
@@ -278,9 +277,12 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
     );
     rw.cairo_context.set_font_size(app_config.font_size);
     rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
-    rw.cairo_context.set_source_rgba(0.8, 0.2, 0.2, 0.5);
-    for c in current_hints.chars() {
-        rw.cairo_context.show_text(&c.to_string());
+    if text.starts_with(current_hints) {
+        // Paint already selected chars.
+        rw.cairo_context.set_source_rgba(0.8, 0.2, 0.2, 0.5);
+        for c in current_hints.chars() {
+            rw.cairo_context.show_text(&c.to_string());
+        }
     }
 
     // Paint unselected chars.
@@ -290,7 +292,7 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
         app_config.text_color.2,
         app_config.text_color.3,
     );
-    for c in text.chars() {
+    for c in text.trim_left_matches(current_hints).chars() {
         rw.cairo_context.show_text(&c.to_string());
     }
     rw.cairo_context.get_target().flush();
