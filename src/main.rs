@@ -40,6 +40,7 @@ pub struct DesktopWindow {
     size: (i32, i32),
 }
 
+#[derive(Debug)]
 pub struct RenderWindow<'a> {
     desktop_window: &'a DesktopWindow,
     cairo_context: cairo::Context,
@@ -59,10 +60,12 @@ pub struct AppConfig {
     pub vertical_align: utils::VerticalAlign,
 }
 
-static HINT_CHARS: &'static str = "sadfjklewcmpgh";
+// static HINT_CHARS: &'static str = "sadfjklewcmpgh";
+static HINT_CHARS: &'static str = "sad";
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
 fn main() {
+    pretty_env_logger::init();
     let app_config = utils::parse_args();
 
     // Get the windows from each specific window manager implementation.
@@ -240,6 +243,10 @@ fn main() {
         .get_reply()
         .expect("Couldn't grab mouse");
 
+    // Since we might have lots of windows on the desktop, it might be required
+    // to enter a sequence in order to get to the correct window.
+    // We'll have to track the keys pressed so far.
+    let mut pressed_keys = String::default();
     let mut closed = false;
     while !closed {
         let event = conn.wait_for_event();
@@ -293,8 +300,34 @@ fn main() {
                         if ksym == xkb::KEY_Escape {
                             closed = true;
                         }
-                        if let Some(rw) = &render_windows.get(kstr) {
+
+                        // In case this a valid character, add it to list of pressed keys.
+                        if HINT_CHARS.contains(kstr) {
+                            info!("Adding '{}' to key sequence", kstr);
+                            pressed_keys.push_str(kstr);
+                        } else {
+                            warn!("Pressed key '{}' is not a valid hint characters", kstr);
+                            closed = true;
+                        }
+
+                        info!("Current key sequence: '{}'", pressed_keys);
+
+                        // Attempt to match the current sequence of keys as a string to the window
+                        // hints shown.
+                        // If there is an exact match, we're done. We'll then focus the window
+                        // and exit. However, we also want to check whether there is still any
+                        // chance to focus any windows from the current key sequence. If there
+                        // is not then we will also just exit and focus no new window.
+                        // If there still is a chance we might find a window then we'll just
+                        // keep going for now.
+                        if let Some(rw) = &render_windows.get(&pressed_keys) {
+                            info!("Found matching window, focusing");
                             wm::focus_window(&rw.desktop_window);
+                            closed = true;
+                        } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
+                            continue
+                        } else {
+                            warn!("No more matches possible with current key sequence");
                             closed = true;
                         }
                     }
