@@ -3,6 +3,8 @@ use std::iter;
 use std::str::FromStr;
 
 use cairo;
+use cairo::enums::{FontSlant, FontWeight};
+use cairo::prelude::SurfaceExt;
 use clap::{App, Arg};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
@@ -10,7 +12,7 @@ use itertools::Itertools;
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
-use AppConfig;
+use {AppConfig, RenderWindow};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {
@@ -50,16 +52,6 @@ impl FromStr for VerticalAlign {
             _ => Err(()),
         }
     }
-}
-
-/// Return `true` if a tuple `container` contains a rectangle given by `rect`.
-///
-/// The notation of the tuples is `(x, y, width, height)`.
-fn contains(container: (u32, u32, u32, u32), rect: (u32, u32, u32, u32)) -> bool {
-    rect.0 >= container.0
-        && rect.1 >= container.0
-        && rect.0 + rect.2 <= container.0 + container.2
-        && rect.1 + rect.3 <= container.1 + container.3
 }
 
 /// Checks whether the provided fontconfig font `f` is valid.
@@ -143,7 +135,7 @@ pub fn parse_args() -> AppConfig {
                 .long("bgcolor")
                 .takes_value(true)
                 .validator(is_valid_color)
-                .default_value("rgba(30, 30, 30, 0.3)")
+                .default_value("rgba(30, 30, 30, 0.9)")
                 .display_order(51)
                 .help("Background color (CSS notation)"))
         .arg(
@@ -265,4 +257,41 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> cairo::TextExten
     cr.select_font_face(family, cairo::FontSlant::Normal, cairo::FontWeight::Normal);
     cr.set_font_size(size);
     cr.text_extents(text)
+}
+
+pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, current_hints: &str) {
+    // Paint background.
+    rw.cairo_context.set_operator(cairo::Operator::Source);
+    rw.cairo_context.set_source_rgb(
+        app_config.bg_color.0,
+        app_config.bg_color.1,
+        app_config.bg_color.2,
+    );
+    rw.cairo_context.paint();
+    rw.cairo_context.set_operator(cairo::Operator::Over);
+
+    // Paint already selected chars.
+    rw.cairo_context.select_font_face(
+        &app_config.font_family,
+        FontSlant::Normal,
+        FontWeight::Normal,
+    );
+    rw.cairo_context.set_font_size(app_config.font_size);
+    rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
+    rw.cairo_context.set_source_rgba(0.8, 0.2, 0.2, 0.5);
+    for c in current_hints.chars() {
+        rw.cairo_context.show_text(&c.to_string());
+    }
+
+    // Paint unselected chars.
+    rw.cairo_context.set_source_rgba(
+        app_config.text_color.0,
+        app_config.text_color.1,
+        app_config.text_color.2,
+        app_config.text_color.3,
+    );
+    for c in text.chars() {
+        rw.cairo_context.show_text(&c.to_string());
+    }
+    rw.cairo_context.get_target().flush();
 }

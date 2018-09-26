@@ -13,8 +13,6 @@ extern crate xcb;
 extern crate xcb_util;
 extern crate xkbcommon;
 
-use cairo::enums::{FontSlant, FontWeight};
-use cairo::prelude::SurfaceExt;
 use std::ffi::CStr;
 use xkbcommon::xkb;
 
@@ -74,6 +72,7 @@ fn main() {
     let screen = setup.roots().nth(screen_num as usize).unwrap();
 
     let values = [
+        (xcb::CW_BACK_PIXEL, screen.black_pixel()),
         (
             xcb::CW_EVENT_MASK,
             xcb::EVENT_MASK_EXPOSURE
@@ -181,6 +180,21 @@ fn main() {
             title.as_bytes(),
         );
 
+        // Set transparency.
+        let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
+            .get_reply()
+            .expect("Couldn't create atom _NET_WM_WINDOW_OPACITY").atom();
+        let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u64;
+        xcb::change_property(
+            &conn,
+            xcb::PROP_MODE_REPLACE as u8,
+            xcb_window_id,
+            opacity_atom,
+            xcb::ATOM_CARDINAL,
+            32,
+            &[opacity],
+        );
+
         conn.flush();
 
         let mut visual = utils::find_visual(&conn, screen.root_visual()).unwrap();
@@ -257,28 +271,7 @@ fn main() {
                 match r {
                     xcb::EXPOSE => {
                         for (hint, rw) in &render_windows {
-                            rw.cairo_context.set_source_rgba(
-                                app_config.bg_color.0,
-                                app_config.bg_color.1,
-                                app_config.bg_color.2,
-                                app_config.bg_color.3,
-                            );
-                            rw.cairo_context.paint();
-                            rw.cairo_context.select_font_face(
-                                &app_config.font_family,
-                                FontSlant::Normal,
-                                FontWeight::Normal,
-                            );
-                            rw.cairo_context.set_font_size(app_config.font_size);
-                            rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
-                            rw.cairo_context.set_source_rgba(
-                                app_config.text_color.0,
-                                app_config.text_color.1,
-                                app_config.text_color.2,
-                                app_config.text_color.3,
-                            );
-                            rw.cairo_context.show_text(&hint);
-                            rw.cairo_context.get_target().flush();
+                            utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
                             conn.flush();
                         }
                     }
@@ -323,7 +316,11 @@ fn main() {
                             wm::focus_window(&rw.desktop_window);
                             closed = true;
                         } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
-                            continue
+                            for (hint, rw) in &render_windows {
+                                utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
+                                conn.flush();
+                            }
+                            continue;
                         } else {
                             warn!("No more matches possible with current key sequence");
                             closed = true;
