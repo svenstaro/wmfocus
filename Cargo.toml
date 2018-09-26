@@ -1,7 +1,17 @@
 [package]
 name = "wmfocus"
+description = "Visually focus windows by label"
 version = "1.0.0"
+repository = "https://github.com/svenstaro/wmfocus"
 authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["wm", "window", "manager", "i3"]
+categories = ["command-line-utilities", "command-line-interface"]
+
+[badges]
+travis-ci = { repository = "svenstaro/wmfocus", branch = "master" }
+maintenance = { status = "actively-developed" }
 
 [features]
 i3 = ["i3ipc"]
