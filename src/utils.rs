@@ -117,6 +117,13 @@ pub fn parse_args() -> AppConfig {
                 .default_value("Mono:72")
                 .help("Use a specific TrueType font with this format: family:size"))
         .arg(
+            Arg::with_name("hint_chars")
+                .short("c")
+                .long("chars")
+                .takes_value(true)
+                .default_value("sadfjklewcmpgh")
+                .help("Define a set of possbile values to use as hint characters"))
+        .arg(
             Arg::with_name("margin")
                 .short("m")
                 .long("margin")
@@ -166,6 +173,7 @@ pub fn parse_args() -> AppConfig {
     let font = value_t!(matches, "font", String).unwrap();
     let v: Vec<_> = font.split(':').collect();
     let (font_family, font_size) = (v[0].to_string(), v[1].parse::<f64>().unwrap());
+    let hint_chars = value_t!(matches, "hint_chars", String).unwrap();
     let margin = value_t!(matches, "margin", f32).unwrap();
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
     let text_color = (
@@ -197,6 +205,7 @@ pub fn parse_args() -> AppConfig {
         font_family,
         font_size,
         loaded_font,
+        hint_chars,
         margin,
         text_color,
         bg_color,

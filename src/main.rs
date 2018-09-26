@@ -52,6 +52,7 @@ pub struct AppConfig {
     pub font_family: String,
     pub font_size: f64,
     pub loaded_font: Vec<u8>,
+    pub hint_chars: String,
     pub margin: f32,
     pub text_color: (f64, f64, f64, f64),
     pub bg_color: (f64, f64, f64, f64),
@@ -59,9 +60,6 @@ pub struct AppConfig {
     pub horizontal_align: utils::HorizontalAlign,
     pub vertical_align: utils::VerticalAlign,
 }
-
-// static HINT_CHARS: &'static str = "sadfjklewcmpgh";
-static HINT_CHARS: &'static str = "sad";
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
 fn main() {
@@ -92,7 +90,7 @@ fn main() {
         // the size of the font.
         let hint = utils::get_next_hint(
             render_windows.keys().collect(),
-            HINT_CHARS,
+            &app_config.hint_chars,
             desktop_windows.len(),
         );
 
@@ -302,7 +300,7 @@ fn main() {
                         }
 
                         // In case this a valid character, add it to list of pressed keys.
-                        if HINT_CHARS.contains(kstr) {
+                        if app_config.hint_chars.contains(kstr) {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
                         } else {
