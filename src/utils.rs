@@ -94,6 +94,16 @@ fn load_font(font_family: &str) -> Vec<u8> {
     loaded_font
 }
 
+/// Parse a color into a tuple of floats.
+fn parse_color(color_str: CssColor) -> (f64, f64, f64, f64) {
+    (
+        f64::from(color_str.r) / 255.0,
+        f64::from(color_str.g) / 255.0,
+        f64::from(color_str.b) / 255.0,
+        f64::from(color_str.a),
+    )
+}
+
 /// Parse app arguments.
 pub fn parse_args() -> AppConfig {
     let matches = App::new(crate_name!())
@@ -128,8 +138,16 @@ pub fn parse_args() -> AppConfig {
                 .takes_value(true)
                 .validator(is_valid_color)
                 .default_value("#dddddd")
-                .display_order(50)
+                .display_order(49)
                 .help("Text color (CSS notation)"))
+        .arg(
+            Arg::with_name("text_color_alt")
+                .long("textcoloralt")
+                .takes_value(true)
+                .validator(is_valid_color)
+                .default_value("#666666")
+                .display_order(50)
+                .help("Text color alternate (CSS notation)"))
         .arg(
             Arg::with_name("bg_color")
                 .long("bgcolor")
@@ -173,19 +191,11 @@ pub fn parse_args() -> AppConfig {
     let hint_chars = value_t!(matches, "hint_chars", String).unwrap();
     let margin = value_t!(matches, "margin", f32).unwrap();
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
-    let text_color = (
-        f64::from(text_color_unparsed.r) / 255.0,
-        f64::from(text_color_unparsed.g) / 255.0,
-        f64::from(text_color_unparsed.b) / 255.0,
-        f64::from(text_color_unparsed.a),
-    );
+    let text_color = parse_color(text_color_unparsed);
+    let text_color_alt_unparsed = value_t!(matches, "text_color_alt", CssColor).unwrap();
+    let text_color_alt = parse_color(text_color_alt_unparsed);
     let bg_color_unparsed = value_t!(matches, "bg_color", CssColor).unwrap();
-    let bg_color = (
-        f64::from(bg_color_unparsed.r) / 255.0,
-        f64::from(bg_color_unparsed.g) / 255.0,
-        f64::from(bg_color_unparsed.b) / 255.0,
-        f64::from(bg_color_unparsed.a),
-    );
+    let bg_color = parse_color(bg_color_unparsed);
     let fill = matches.is_present("fill");
     let print_only = matches.is_present("print_only");
     let (horizontal_align, vertical_align) = if fill {
@@ -206,6 +216,7 @@ pub fn parse_args() -> AppConfig {
         hint_chars,
         margin,
         text_color,
+        text_color_alt,
         bg_color,
         fill,
         print_only,
@@ -286,7 +297,12 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
     rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
     if text.starts_with(current_hints) {
         // Paint already selected chars.
-        rw.cairo_context.set_source_rgba(0.8, 0.2, 0.2, 0.5);
+        rw.cairo_context.set_source_rgba(
+            app_config.text_color_alt.0,
+            app_config.text_color_alt.1,
+            app_config.text_color_alt.2,
+            app_config.text_color_alt.3,
+        );
         for c in current_hints.chars() {
             rw.cairo_context.show_text(&c.to_string());
         }

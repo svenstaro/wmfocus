@@ -53,6 +53,7 @@ pub struct AppConfig {
     pub hint_chars: String,
     pub margin: f32,
     pub text_color: (f64, f64, f64, f64),
+    pub text_color_alt: (f64, f64, f64, f64),
     pub bg_color: (f64, f64, f64, f64),
     pub fill: bool,
     pub print_only: bool,
