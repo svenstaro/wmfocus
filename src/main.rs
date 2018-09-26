@@ -55,6 +55,7 @@ pub struct AppConfig {
     pub text_color: (f64, f64, f64, f64),
     pub bg_color: (f64, f64, f64, f64),
     pub fill: bool,
+    pub print_only: bool,
     pub horizontal_align: utils::HorizontalAlign,
     pub vertical_align: utils::VerticalAlign,
 }
@@ -313,7 +314,12 @@ fn main() {
                         // keep going for now.
                         if let Some(rw) = &render_windows.get(&pressed_keys) {
                             info!("Found matching window, focusing");
-                            wm::focus_window(&rw.desktop_window);
+                            if app_config.print_only {
+                                println!("{}", rw.desktop_window.id);
+                            }
+                            else {
+                                wm::focus_window(&rw.desktop_window);
+                            }
                             closed = true;
                         } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
                             for (hint, rw) in &render_windows {

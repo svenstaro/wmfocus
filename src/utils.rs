@@ -160,6 +160,11 @@ pub fn parse_args() -> AppConfig {
                 .conflicts_with_all(&["horizontal_align", "vertical_align", "margin"])
                 .display_order(102)
                 .help("Completely fill out windows"))
+        .arg(
+            Arg::with_name("print_only")
+                .short("p")
+                .long("printonly")
+                .help("Print the window id only but don't change focus"))
         .get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
@@ -182,6 +187,7 @@ pub fn parse_args() -> AppConfig {
         f64::from(bg_color_unparsed.a),
     );
     let fill = matches.is_present("fill");
+    let print_only = matches.is_present("print_only");
     let (horizontal_align, vertical_align) = if fill {
         (HorizontalAlign::Center, VerticalAlign::Center)
     } else {
@@ -202,6 +208,7 @@ pub fn parse_args() -> AppConfig {
         text_color,
         bg_color,
         fill,
+        print_only,
         horizontal_align,
         vertical_align,
     }
