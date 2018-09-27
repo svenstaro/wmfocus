@@ -8,6 +8,7 @@ extern crate css_color_parser;
 extern crate font_loader;
 extern crate itertools;
 extern crate pretty_env_logger;
+extern crate regex;
 extern crate x11;
 extern crate xcb;
 extern crate xcb_util;
@@ -185,7 +186,8 @@ fn main() {
         // Set transparency.
         let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
             .get_reply()
-            .expect("Couldn't create atom _NET_WM_WINDOW_OPACITY").atom();
+            .expect("Couldn't create atom _NET_WM_WINDOW_OPACITY")
+            .atom();
         let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u64;
         xcb::change_property(
             &conn,
@@ -317,8 +319,7 @@ fn main() {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
                                 println!("{}", rw.desktop_window.id);
-                            }
-                            else {
+                            } else {
                                 wm::focus_window(&rw.desktop_window);
                             }
                             closed = true;

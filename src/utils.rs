@@ -9,6 +9,7 @@ use clap::{App, Arg};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
+use regex::Regex;
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
@@ -315,7 +316,8 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
         app_config.text_color.2,
         app_config.text_color.3,
     );
-    for c in text.trim_left_matches(current_hints).chars() {
+    let re = Regex::new(&format!("^{}", current_hints)).unwrap();
+    for c in re.replace(text, "").chars() {
         rw.cairo_context.show_text(&c.to_string());
     }
     rw.cairo_context.get_target().flush();
