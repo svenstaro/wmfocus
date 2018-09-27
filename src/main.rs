@@ -321,7 +321,7 @@ fn main() {
 #[cfg(not(any(feature = "i3", feature = "add_some_other_wm_here")))]
 fn main() {
     eprintln!(
-        "You need to enable to enabe support for at least one window manager.\n
+        "You need to enable support for at least one window manager.\n
 Currently supported:
     --features i3"
     );
