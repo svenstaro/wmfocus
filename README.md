@@ -27,15 +27,15 @@ Thanks to cairo, it should work on all kinds of screens and automatically displa
 Draw labels on the upper-left corner of all windows:
 
     wmfocus
-    
+
 Completely fill out windows and draw the label in the middle:
 
     wmfocus --fill
-    
+
 Use a different font (as provided by fontconfig):
 
     wmfocus -f "Droid Sans":100
-    
+
 Change up the default colors:
 
     wmfocus --textcolor red --textcoloralt #eeeeee --bgcolor "rgba(50, 50, 200, 0.5)"
@@ -44,7 +44,7 @@ wmfocus will make use of a compositor to get real transparency.
 
 ## Full help
 ```
-wmfocus 1.0.0
+wmfocus 1.0.1
 Sven-Hendrik Haase <svenstaro@gmail.com>
 
 
