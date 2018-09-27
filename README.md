@@ -28,7 +28,7 @@ Draw labels on the upper-left corner of all windows:
 
     wmfocus
 
-Completely fill out windows and draw the label in the middle:
+Completely fill out windows and draw the label in the middle (try it with transparency!):
 
     wmfocus --fill
 
