@@ -16,9 +16,9 @@ extern crate xkbcommon;
 
 use std::ffi::CStr;
 use xkbcommon::xkb;
-
 use std::collections::HashMap;
 use std::iter::Iterator;
+use std::time::Duration;
 
 mod utils;
 
@@ -231,33 +231,10 @@ fn main() {
     }
 
     // Receive keyboard events.
-    let grab_keyboard_cookie = xcb::xproto::grab_keyboard(
-        &conn,
-        true,
-        screen.root(),
-        xcb::CURRENT_TIME,
-        xcb::GRAB_MODE_ASYNC as u8,
-        xcb::GRAB_MODE_ASYNC as u8,
-    );
-    grab_keyboard_cookie
-        .get_reply()
-        .expect("Couldn't grab keyboard");
+    utils::snatch_keyboard(&conn, &screen, Duration::from_secs(1)).unwrap();
 
     // Receive mouse events.
-    let grab_pointer_cookie = xcb::xproto::grab_pointer(
-        &conn,
-        true,
-        screen.root(),
-        xcb::EVENT_MASK_BUTTON_PRESS as u16,
-        xcb::GRAB_MODE_ASYNC as u8,
-        xcb::GRAB_MODE_ASYNC as u8,
-        xcb::NONE,
-        xcb::NONE,
-        xcb::CURRENT_TIME,
-    );
-    grab_pointer_cookie
-        .get_reply()
-        .expect("Couldn't grab mouse");
+    utils::snatch_mouse(&conn, &screen, Duration::from_secs(1)).unwrap();
 
     // Since we might have lots of windows on the desktop, it might be required
     // to enter a sequence in order to get to the correct window.

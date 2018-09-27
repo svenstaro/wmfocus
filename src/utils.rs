@@ -1,7 +1,3 @@
-use std::error::Error;
-use std::iter;
-use std::str::FromStr;
-
 use cairo;
 use cairo::enums::{FontSlant, FontWeight};
 use cairo::prelude::SurfaceExt;
@@ -10,6 +6,11 @@ use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
 use regex::Regex;
+use std::error::Error;
+use std::iter;
+use std::str::FromStr;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
@@ -278,6 +279,8 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> cairo::TextExten
     cr.text_extents(text)
 }
 
+/// Draw a `text` onto `rw`. In case any `current_hints` are already typed, it will draw those in a
+/// different color to show that they were in fact typed.
 pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, current_hints: &str) {
     // Paint background.
     rw.cairo_context.set_operator(cairo::Operator::Source);
@@ -321,4 +324,79 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
         rw.cairo_context.show_text(&c.to_string());
     }
     rw.cairo_context.get_target().flush();
+}
+
+/// Try to grab the keyboard until `timeout` is reached.
+///
+/// Generally with X, I found that you can't grab global keyboard input without it failing
+/// sometimes due to other clients grabbing it occasionally. Hence, we'll have to keep retrying
+/// until we eventually succeed.
+pub fn snatch_keyboard(
+    conn: &xcb::Connection,
+    screen: &xcb::Screen,
+    timeout: Duration,
+) -> Result<(), String> {
+    let now = Instant::now();
+    loop {
+        if now.elapsed() > timeout {
+            return Err(format!(
+                "Couldn't grab keyboard input within {:?}",
+                now.elapsed()
+            ));
+        }
+        let grab_keyboard_cookie = xcb::xproto::grab_keyboard(
+            &conn,
+            true,
+            screen.root(),
+            xcb::CURRENT_TIME,
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::GRAB_MODE_ASYNC as u8,
+        );
+        let grab_keyboard_reply = grab_keyboard_cookie
+            .get_reply()
+            .map_err(|_| "Couldn't communicate with X")?;
+        if grab_keyboard_reply.status() == xcb::GRAB_STATUS_SUCCESS as u8 {
+            return Ok(());
+        }
+        sleep(Duration::from_millis(1));
+    }
+}
+
+/// Try to grab the mouse until `timeout` is reached.
+///
+/// Generally with X, I found that you can't grab global mouse input without it failing sometimes
+/// due to other clients grabbing it occasionally. Hence, we'll have to keep retrying until we
+/// eventually succeed.
+pub fn snatch_mouse(
+    conn: &xcb::Connection,
+    screen: &xcb::Screen,
+    timeout: Duration,
+) -> Result<(), String> {
+    let now = Instant::now();
+    loop {
+        if now.elapsed() > timeout {
+            return Err(format!(
+                "Couldn't grab keyboard input within {:?}",
+                now.elapsed()
+            ));
+        }
+        let grab_pointer_cookie = xcb::xproto::grab_pointer(
+            &conn,
+            true,
+            screen.root(),
+            xcb::EVENT_MASK_BUTTON_PRESS as u16,
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::NONE,
+            xcb::NONE,
+            xcb::CURRENT_TIME,
+        );
+        let grab_pointer_reply = grab_pointer_cookie
+            .get_reply()
+            .map_err(|_| "Couldn't communicate with X")?;
+        if grab_pointer_reply.status() == xcb::GRAB_STATUS_SUCCESS as u8 {
+            return Ok(());
+        }
+        sleep(Duration::from_millis(1));
+    }
 }
