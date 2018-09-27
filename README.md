@@ -8,10 +8,14 @@
 
 This tool that allows you to rapidly choose a specific window directly without having to use the mouse or directional keyboard navigation.
 
+![Screen cast](cast.apng)
+
+Thanks to cairo, it should work on all kinds of screens and automatically display at the correct size according to your DPI.
+
 
 ## Installation
 
-**On Arch Linux**: [Get it from AUR](https://aur.archlinux.org/packages/wmfocus/)   
+**On Arch Linux**: [Get it from AUR](https://aur.archlinux.org/packages/wmfocus/)
 
 **With Cargo**:
 
