@@ -102,5 +102,4 @@ This is mostly a note for me on how to release this thing:
 - Update `README.md`, `Cargo.toml`.
 - `git commit` and `git tag -s`, `git push`.
 - `cargo publish`
-- Releases will automatically be deployed by Travis.
 - Update AUR package.
