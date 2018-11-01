@@ -1,7 +1,7 @@
 use cairo;
 use cairo::enums::{FontSlant, FontWeight};
 use cairo::prelude::SurfaceExt;
-use clap::{App, Arg};
+use clap::{App, Arg, AppSettings};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
@@ -112,6 +112,7 @@ pub fn parse_args() -> AppConfig {
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
+        .global_setting(AppSettings::ColoredHelp)
         .arg(
             Arg::with_name("font")
                 .short("f")
