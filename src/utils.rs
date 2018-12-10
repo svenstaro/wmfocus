@@ -1,10 +1,13 @@
 use cairo;
 use cairo::enums::{FontSlant, FontWeight};
 use cairo::prelude::SurfaceExt;
-use clap::{App, Arg, AppSettings};
+use clap::{
+    crate_authors, crate_description, crate_name, crate_version, value_t, App, AppSettings, Arg,
+};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use itertools::Itertools;
+use log::debug;
 use regex::Regex;
 use std::error::Error;
 use std::iter;
@@ -14,7 +17,7 @@ use std::time::{Duration, Instant};
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
-use {AppConfig, RenderWindow};
+use crate::{AppConfig, RenderWindow};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {

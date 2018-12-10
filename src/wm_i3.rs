@@ -1,6 +1,8 @@
 use i3ipc::reply::{Node, NodeType, Workspace};
 use i3ipc::I3Connection;
-use DesktopWindow;
+use log::info;
+
+use crate::DesktopWindow;
 
 /// Find first `Node` that fulfills a given criterion.
 fn find_first_node_with_attr<F>(start_node: &Node, predicate: F) -> Option<&Node>
@@ -24,12 +26,14 @@ where
 /// Return a list of all `DesktopWindow`s for the given `Workspace`.
 fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> {
     let workspace_node = find_first_node_with_attr(&root_node, |x| {
-        x.name == Some(workspace.name.clone()) && if let NodeType::Workspace = x.nodetype {
-            true
-        } else {
-            false
-        }
-    }).expect("Couldn't find the Workspace node");
+        x.name == Some(workspace.name.clone())
+            && if let NodeType::Workspace = x.nodetype {
+                true
+            } else {
+                false
+            }
+    })
+    .expect("Couldn't find the Workspace node");
 
     let mut nodes_to_explore: Vec<&Node> = workspace_node.nodes.iter().collect();
     nodes_to_explore.extend(workspace_node.floating_nodes.iter());

@@ -1,24 +1,10 @@
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate log;
-extern crate cairo;
-extern crate cairo_sys;
-extern crate css_color_parser;
-extern crate font_loader;
-extern crate itertools;
-extern crate pretty_env_logger;
-extern crate regex;
-extern crate x11;
-extern crate xcb;
-extern crate xcb_util;
-extern crate xkbcommon;
-
-use std::ffi::CStr;
-use xkbcommon::xkb;
+use clap::crate_name;
+use log::{debug, info, warn};
 use std::collections::HashMap;
+use std::ffi::CStr;
 use std::iter::Iterator;
 use std::time::Duration;
+use xkbcommon::xkb;
 
 mod utils;
 
@@ -29,7 +15,7 @@ extern crate i3ipc;
 mod wm_i3;
 
 #[cfg(feature = "i3")]
-use wm_i3 as wm;
+use crate::wm_i3 as wm;
 
 #[derive(Debug)]
 pub struct DesktopWindow {

@@ -8,6 +8,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["wm", "window", "manager", "i3"]
 categories = ["command-line-utilities", "command-line-interface"]
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "svenstaro/wmfocus", branch = "master" }
