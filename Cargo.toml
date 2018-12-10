@@ -21,10 +21,10 @@ cairo-sys-rs = "0.7"
 clap = "2.31"
 css-color-parser = "0.1"
 font-loader = "0.7"
-i3ipc = { version = "0.8", optional = true }
-itertools = "0.7"
+i3ipc = { version = "0.9", optional = true }
+itertools = "0.8"
 log = "0.4"
-pretty_env_logger = "0.2"
+pretty_env_logger = "0.3"
 regex = "1.0"
 xcb = "0.8"
 xkbcommon = "0.3"
