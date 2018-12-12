@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
-use crate::{AppConfig, RenderWindow};
+use crate::{AppConfig, RenderWindow, DesktopWindow};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {
@@ -403,4 +403,13 @@ pub fn snatch_mouse(
         }
         sleep(Duration::from_millis(1));
     }
+}
+
+/// Sort list of `DesktopWindow`s by position.
+///
+/// This sorts by column first and row second.
+pub fn sort_by_pos(mut windows: Vec<DesktopWindow>) -> Vec<DesktopWindow> {
+    windows.sort_by_key(|w| w.pos.1);
+    windows.sort_by_key(|w| w.pos.0);
+    windows
 }

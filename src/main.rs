@@ -54,7 +54,10 @@ fn main() {
     let app_config = utils::parse_args();
 
     // Get the windows from each specific window manager implementation.
-    let desktop_windows = wm::get_windows();
+    let desktop_windows_raw = wm::get_windows();
+
+    // Sort by position to make hint position more deterministic.
+    let desktop_windows = utils::sort_by_pos(desktop_windows_raw);
 
     let (conn, screen_num) = xcb::Connection::connect(None).unwrap();
     let setup = conn.get_setup();
