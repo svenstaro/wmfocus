@@ -61,6 +61,7 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
             next_vec.extend(node.floating_nodes.iter());
             if node.window.is_some() {
                 let root_node = find_parent_of(root_node, node);
+
                 let pos_x = if let Some(root_node) = root_node {
                     if root_node.layout == NodeLayout::Tabbed {
                         node.rect.0 + node.deco_rect.0
@@ -71,10 +72,20 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
                     node.rect.0
                 };
 
+                let pos_y = if let Some(root_node) = root_node {
+                    if root_node.layout == NodeLayout::Stacked {
+                        root_node.rect.1 + node.deco_rect.1
+                    } else {
+                        node.rect.1 - node.deco_rect.3
+                    }
+                } else {
+                    node.rect.1 - node.deco_rect.3
+                };
+
                 let window = DesktopWindow {
                     id: node.id,
                     title: node.name.clone().unwrap_or_default(),
-                    pos: (pos_x, (node.rect.1 - node.deco_rect.3)),
+                    pos: (pos_x, pos_y),
                     size: ((node.rect.2), (node.rect.3 + node.deco_rect.3)),
                 };
                 windows.push(window);
