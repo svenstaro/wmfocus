@@ -30,6 +30,7 @@ pub struct RenderWindow<'a> {
     desktop_window: &'a DesktopWindow,
     cairo_context: cairo::Context,
     draw_pos: (f64, f64),
+    rect: (i32, i32, i32, i32),
 }
 
 #[derive(Debug)]
@@ -120,7 +121,7 @@ fn main() {
             desktop_window
         );
 
-        let x = match app_config.horizontal_align {
+        let mut x = match app_config.horizontal_align {
             utils::HorizontalAlign::Left => desktop_window.pos.0 as i16,
             utils::HorizontalAlign::Center => {
                 (desktop_window.pos.0 + desktop_window.size.0 / 2 - i32::from(width) / 2) as i16
@@ -139,6 +140,20 @@ fn main() {
                 (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height)) as i16
             }
         };
+
+        // If this is overlapping then we'll nudge the new RenderWindow a little bit out of the
+        // way.
+        let mut overlaps = utils::find_overlaps(
+            render_windows.values().collect(),
+            (x.into(), y.into(), width.into(), height.into()),
+        );
+        while !overlaps.is_empty() {
+            x += overlaps.pop().unwrap().2 as i16;
+            overlaps = utils::find_overlaps(
+                render_windows.values().collect(),
+                (x.into(), y.into(), width.into(), height.into()),
+            );
+        }
 
         let xcb_window_id = conn.generate_id();
 
@@ -214,6 +229,7 @@ fn main() {
             desktop_window,
             cairo_context,
             draw_pos,
+            rect: (x.into(), y.into(), width.into(), height.into()),
         };
 
         render_windows.insert(hint, render_window);

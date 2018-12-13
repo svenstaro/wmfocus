@@ -118,77 +118,77 @@ pub fn parse_args() -> AppConfig {
         .global_setting(AppSettings::ColoredHelp)
         .arg(
             Arg::with_name("font")
-                .short("f")
-                .long("font")
-                .takes_value(true)
-                .validator(is_truetype_font)
-                .default_value("Mono:72")
-                .help("Use a specific TrueType font with this format: family:size"))
+            .short("f")
+            .long("font")
+            .takes_value(true)
+            .validator(is_truetype_font)
+            .default_value("Mono:72")
+            .help("Use a specific TrueType font with this format: family:size"))
         .arg(
             Arg::with_name("hint_chars")
-                .short("c")
-                .long("chars")
-                .takes_value(true)
-                .default_value("sadfjklewcmpgh")
-                .help("Define a set of possbile values to use as hint characters"))
+            .short("c")
+            .long("chars")
+            .takes_value(true)
+            .default_value("sadfjklewcmpgh")
+            .help("Define a set of possbile values to use as hint characters"))
         .arg(
             Arg::with_name("margin")
-                .short("m")
-                .long("margin")
-                .takes_value(true)
-                .default_value("0.2")
-                .help("Add an additional margin around the text box (value is a factor of the box size)"))
+            .short("m")
+            .long("margin")
+            .takes_value(true)
+            .default_value("0.2")
+            .help("Add an additional margin around the text box (value is a factor of the box size)"))
         .arg(
             Arg::with_name("text_color")
-                .long("textcolor")
-                .takes_value(true)
-                .validator(is_valid_color)
-                .default_value("#dddddd")
-                .display_order(49)
-                .help("Text color (CSS notation)"))
+            .long("textcolor")
+            .takes_value(true)
+            .validator(is_valid_color)
+            .default_value("#dddddd")
+            .display_order(49)
+            .help("Text color (CSS notation)"))
         .arg(
             Arg::with_name("text_color_alt")
-                .long("textcoloralt")
-                .takes_value(true)
-                .validator(is_valid_color)
-                .default_value("#666666")
-                .display_order(50)
-                .help("Text color alternate (CSS notation)"))
+            .long("textcoloralt")
+            .takes_value(true)
+            .validator(is_valid_color)
+            .default_value("#666666")
+            .display_order(50)
+            .help("Text color alternate (CSS notation)"))
         .arg(
             Arg::with_name("bg_color")
-                .long("bgcolor")
-                .takes_value(true)
-                .validator(is_valid_color)
-                .default_value("rgba(30, 30, 30, 0.9)")
-                .display_order(51)
-                .help("Background color (CSS notation)"))
+            .long("bgcolor")
+            .takes_value(true)
+            .validator(is_valid_color)
+            .default_value("rgba(30, 30, 30, 0.9)")
+            .display_order(51)
+            .help("Background color (CSS notation)"))
         .arg(
             Arg::with_name("horizontal_align")
-                .long("halign")
-                .takes_value(true)
-                .possible_values(&["left", "center", "right"])
-                .default_value("left")
-                .display_order(100)
-                .help("Horizontal alignment of the box inside the window"))
+            .long("halign")
+            .takes_value(true)
+            .possible_values(&["left", "center", "right"])
+            .default_value("left")
+            .display_order(100)
+            .help("Horizontal alignment of the box inside the window"))
         .arg(
             Arg::with_name("vertical_align")
-                .long("valign")
-                .takes_value(true)
-                .possible_values(&["top", "center", "bottom"])
-                .default_value("top")
-                .display_order(101)
-                .help("Vertical alignment of the box inside the window"))
+            .long("valign")
+            .takes_value(true)
+            .possible_values(&["top", "center", "bottom"])
+            .default_value("top")
+            .display_order(101)
+            .help("Vertical alignment of the box inside the window"))
         .arg(
             Arg::with_name("fill")
-                .long("fill")
-                .conflicts_with_all(&["horizontal_align", "vertical_align", "margin"])
-                .display_order(102)
-                .help("Completely fill out windows"))
+            .long("fill")
+            .conflicts_with_all(&["horizontal_align", "vertical_align", "margin"])
+            .display_order(102)
+            .help("Completely fill out windows"))
         .arg(
             Arg::with_name("print_only")
-                .short("p")
-                .long("printonly")
-                .help("Print the window id only but don't change focus"))
+            .short("p")
+            .long("printonly")
+            .help("Print the window id only but don't change focus"))
         .get_matches();
 
     let font = value_t!(matches, "font", String).unwrap();
@@ -408,8 +408,46 @@ pub fn snatch_mouse(
 /// Sort list of `DesktopWindow`s by position.
 ///
 /// This sorts by column first and row second.
-pub fn sort_by_pos(mut windows: Vec<DesktopWindow>) -> Vec<DesktopWindow> {
-    windows.sort_by_key(|w| w.pos.1);
-    windows.sort_by_key(|w| w.pos.0);
-    windows
+pub fn sort_by_pos(mut dws: Vec<DesktopWindow>) -> Vec<DesktopWindow> {
+    dws.sort_by_key(|w| w.pos.1);
+    dws.sort_by_key(|w| w.pos.0);
+    dws
+}
+
+/// Returns true if `r1` and `r2` overlap.
+fn intersects(r1: (i32, i32, i32, i32), r2: (i32, i32, i32, i32)) -> bool {
+    let left_corner_inside = r1.0 < r2.0 + r2.2;
+    let right_corner_inside = r1.0 + r1.2 > r2.0;
+    let top_corner_inside = r1.1 < r2.1 + r2.3;
+    let bottom_corner_inside = r1.1 + r1.3 > r2.1;
+    left_corner_inside && right_corner_inside && top_corner_inside && bottom_corner_inside
+}
+
+/// Finds overlaps and returns a list of those rects in the format (x, y, w, h).
+pub fn find_overlaps(
+    rws: Vec<&RenderWindow>,
+    rect: (i32, i32, i32, i32),
+) -> Vec<(i32, i32, i32, i32)> {
+    let mut overlaps = vec![];
+    for rw in rws {
+        if intersects(rw.rect, rect) {
+            overlaps.push(rw.rect);
+        }
+    }
+    overlaps
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_intersects() {
+        assert!(intersects((1905, 705, 31, 82), (1905, 723, 38, 64)));
+    }
+
+    #[test]
+    fn test_no_intersect() {
+        assert!(!intersects((1905, 705, 31, 82), (2000, 723, 38, 64)));
+    }
 }
