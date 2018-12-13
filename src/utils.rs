@@ -409,8 +409,8 @@ pub fn snatch_mouse(
 ///
 /// This sorts by column first and row second.
 pub fn sort_by_pos(mut dws: Vec<DesktopWindow>) -> Vec<DesktopWindow> {
-    dws.sort_by_key(|w| w.pos.1);
     dws.sort_by_key(|w| w.pos.0);
+    dws.sort_by_key(|w| w.pos.1);
     dws
 }
 
