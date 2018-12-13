@@ -1,4 +1,4 @@
-use i3ipc::reply::{Node, NodeType, Workspace};
+use i3ipc::reply::{Node, NodeLayout, NodeType, Workspace};
 use i3ipc::I3Connection;
 use log::info;
 
@@ -14,6 +14,22 @@ where
         let mut next_vec = vec![];
         for node in &nodes_to_explore {
             if predicate(node) {
+                return Some(node);
+            }
+            next_vec.extend(node.nodes.iter());
+        }
+        nodes_to_explore = next_vec;
+    }
+    None
+}
+
+/// Find parent of `child`.
+fn find_parent_of<'a>(start_node: &'a Node, child: &'a Node) -> Option<&'a Node> {
+    let mut nodes_to_explore: Vec<&Node> = start_node.nodes.iter().collect();
+    while !nodes_to_explore.is_empty() {
+        let mut next_vec = vec![];
+        for node in &nodes_to_explore {
+            if node.nodes.iter().find(|&x| child.id == x.id).is_some() {
                 return Some(node);
             }
             next_vec.extend(node.nodes.iter());
@@ -44,10 +60,21 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
             next_vec.extend(node.nodes.iter());
             next_vec.extend(node.floating_nodes.iter());
             if node.window.is_some() {
+                let root_node = find_parent_of(root_node, node);
+                let pos_x = if let Some(root_node) = root_node {
+                    if root_node.layout == NodeLayout::Tabbed {
+                        node.rect.0 + node.deco_rect.0
+                    } else {
+                        node.rect.0
+                    }
+                } else {
+                    node.rect.0
+                };
+
                 let window = DesktopWindow {
                     id: node.id,
                     title: node.name.clone().unwrap_or_default(),
-                    pos: ((node.rect.0), (node.rect.1 - node.deco_rect.3)),
+                    pos: (pos_x, (node.rect.1 - node.deco_rect.3)),
                     size: ((node.rect.2), (node.rect.3 + node.deco_rect.3)),
                 };
                 windows.push(window);

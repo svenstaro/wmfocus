@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 use xcb;
 use xcb::ffi::xcb_visualid_t;
 
-use crate::{AppConfig, RenderWindow, DesktopWindow};
+use crate::{AppConfig, DesktopWindow, RenderWindow};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {
