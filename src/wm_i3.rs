@@ -84,6 +84,7 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
 
                 let window = DesktopWindow {
                     id: node.id,
+                    x_window_id: node.window,
                     title: node.name.clone().unwrap_or_default(),
                     pos: (pos_x, pos_y),
                     size: ((node.rect.2), (node.rect.3 + node.deco_rect.3)),

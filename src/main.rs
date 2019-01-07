@@ -20,6 +20,7 @@ use crate::wm_i3 as wm;
 #[derive(Debug)]
 pub struct DesktopWindow {
     id: i64,
+    x_window_id: Option<i32>,
     title: String,
     pos: (i32, i32),
     size: (i32, i32),
@@ -300,7 +301,7 @@ fn main() {
                         if let Some(rw) = &render_windows.get(&pressed_keys) {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
-                                println!("{}", rw.desktop_window.id);
+                                println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
                                 wm::focus_window(&rw.desktop_window);
                             }
