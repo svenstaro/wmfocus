@@ -79,16 +79,16 @@ fn is_valid_color(c: String) -> Result<(), String> {
 }
 
 /// Validate coordinates.
-fn is_valid_coord(g: String) -> Result<(), String> {
-    let v: Vec<_> = g.split(',').collect();
-    let (xoff, yoff) = (v.get(0), v.get(1));
-    if xoff.is_none() || yoff.is_none() {
+fn is_valid_coord(c: String) -> Result<(), String> {
+    let v: Vec<_> = c.split(',').collect();
+    let (x, y) = (v.get(0), v.get(1));
+    if x.is_none() || y.is_none() {
         return Err("Expected x,y coordinates".to_string());
     }
-    if let Err(e) = xoff.unwrap().parse::<f32>() {
+    if let Err(e) = x.unwrap().parse::<i32>() {
         return Err(e.description().to_string());
     }
-    if let Err(e) = yoff.unwrap().parse::<f32>() {
+    if let Err(e) = y.unwrap().parse::<i32>() {
         return Err(e.description().to_string());
     }
     Ok(())
@@ -161,7 +161,7 @@ pub fn parse_args() -> AppConfig {
             .takes_value(true)
             .validator(is_valid_coord)
             .default_value("0,0")
-            .display_order(45)
+            .display_order(103)
             .help("Offset from window edge (x,y)"))
         .arg(
             Arg::with_name("text_color")
@@ -223,7 +223,7 @@ pub fn parse_args() -> AppConfig {
     let margin = value_t!(matches, "margin", f32).unwrap();
     let offset = value_t!(matches, "offset", String).unwrap();
     let v: Vec<_> = offset.split(',').collect();
-    let (xoff, yoff) = (v[0].parse::<f64>().unwrap(), v[1].parse::<f64>().unwrap());
+    let (x_offset, y_offset) = (v[0].parse::<i32>().unwrap(), v[1].parse::<i32>().unwrap());
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
     let text_color = parse_color(text_color_unparsed);
     let text_color_alt_unparsed = value_t!(matches, "text_color_alt", CssColor).unwrap();
@@ -256,8 +256,8 @@ pub fn parse_args() -> AppConfig {
         print_only,
         horizontal_align,
         vertical_align,
-        xoff,
-        yoff,
+        x_offset,
+        y_offset,
     }
 }
 
