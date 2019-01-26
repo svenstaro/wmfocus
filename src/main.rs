@@ -48,6 +48,8 @@ pub struct AppConfig {
     pub print_only: bool,
     pub horizontal_align: utils::HorizontalAlign,
     pub vertical_align: utils::VerticalAlign,
+    pub xoff: f64,
+    pub yoff: f64,
 }
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
@@ -107,6 +109,9 @@ fn main() {
             )
         };
 
+        let xoff = app_config.xoff as i16;
+        let yoff = app_config.yoff as i16;
+
         // Due to the way cairo lays out text, we'll have to calculate the actual coordinates to
         // put the cursor. See:
         // https://www.cairographics.org/samples/text_align_center/
@@ -123,22 +128,22 @@ fn main() {
         );
 
         let mut x = match app_config.horizontal_align {
-            utils::HorizontalAlign::Left => desktop_window.pos.0 as i16,
+            utils::HorizontalAlign::Left => (desktop_window.pos.0 + i32::from(xoff)) as i16,
             utils::HorizontalAlign::Center => {
                 (desktop_window.pos.0 + desktop_window.size.0 / 2 - i32::from(width) / 2) as i16
             }
             utils::HorizontalAlign::Right => {
-                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width)) as i16
+                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width) - i32::from(xoff)) as i16
             }
         };
 
         let y = match app_config.vertical_align {
-            utils::VerticalAlign::Top => desktop_window.pos.1 as i16,
+            utils::VerticalAlign::Top => (desktop_window.pos.1 + i32::from(yoff)) as i16,
             utils::VerticalAlign::Center => {
                 (desktop_window.pos.1 + desktop_window.size.1 / 2 - i32::from(height) / 2) as i16
             }
             utils::VerticalAlign::Bottom => {
-                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height)) as i16
+                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height) - i32::from(yoff)) as i16
             }
         };
 
