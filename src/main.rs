@@ -32,6 +32,7 @@ pub struct RenderWindow<'a> {
     cairo_context: cairo::Context,
     draw_pos: (f64, f64),
     rect: (i32, i32, i32, i32),
+    xcb_window_id: u32,
 }
 
 #[derive(Debug)]
@@ -231,6 +232,7 @@ fn main() {
             cairo_context,
             draw_pos,
             rect: (x.into(), y.into(), width.into(), height.into()),
+            xcb_window_id,
         };
 
         render_windows.insert(hint, render_window);
@@ -303,6 +305,11 @@ fn main() {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
+
+                                for (_, rwd) in &render_windows {
+                                    xcb::unmap_window(&conn, rwd.xcb_window_id);
+                                }
+                                conn.flush();
                                 wm::focus_window(&rw.desktop_window);
                             }
                             closed = true;
