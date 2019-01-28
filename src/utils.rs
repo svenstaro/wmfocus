@@ -159,6 +159,7 @@ pub fn parse_args() -> AppConfig {
             .short("o")
             .long("offset")
             .takes_value(true)
+            .allow_hyphen_values(true)
             .validator(is_valid_coord)
             .default_value("0,0")
             .help("Offset box from edge of window (x,y)"))
