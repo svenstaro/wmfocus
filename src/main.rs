@@ -124,25 +124,25 @@ fn main() {
             desktop_window
         );
 
-        let xoff = app_config.x_offset;
+        let x_offset = app_config.x_offset;
         let mut x = match app_config.horizontal_align {
-            utils::HorizontalAlign::Left => (desktop_window.pos.0 + xoff) as i16,
+            utils::HorizontalAlign::Left => (desktop_window.pos.0 + x_offset) as i16,
             utils::HorizontalAlign::Center => {
                 (desktop_window.pos.0 + desktop_window.size.0 / 2 - i32::from(width) / 2) as i16
             }
             utils::HorizontalAlign::Right => {
-                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width) - xoff) as i16
+                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width) - x_offset) as i16
             }
         };
 
-        let yoff = app_config.y_offset;
+        let y_offset = app_config.y_offset;
         let y = match app_config.vertical_align {
-            utils::VerticalAlign::Top => (desktop_window.pos.1 + yoff) as i16,
+            utils::VerticalAlign::Top => (desktop_window.pos.1 + y_offset) as i16,
             utils::VerticalAlign::Center => {
                 (desktop_window.pos.1 + desktop_window.size.1 / 2 - i32::from(height) / 2) as i16
             }
             utils::VerticalAlign::Bottom => {
-                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height) - yoff) as i16
+                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height) - y_offset) as i16
             }
         };
 
