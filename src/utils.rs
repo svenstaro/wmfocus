@@ -162,7 +162,7 @@ pub fn parse_args() -> AppConfig {
             .allow_hyphen_values(true)
             .validator(is_valid_coord)
             .default_value("0,0")
-            .help("Offset box from edge of window (x,y)"))
+            .help("Offset box from edge of window relative to alignment (x,y)"))
         .arg(
             Arg::with_name("text_color")
             .long("textcolor")
