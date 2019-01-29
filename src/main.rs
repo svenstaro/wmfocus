@@ -48,6 +48,8 @@ pub struct AppConfig {
     pub print_only: bool,
     pub horizontal_align: utils::HorizontalAlign,
     pub vertical_align: utils::VerticalAlign,
+    pub x_offset: i32,
+    pub y_offset: i32,
 }
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
@@ -122,23 +124,25 @@ fn main() {
             desktop_window
         );
 
+        let x_offset = app_config.x_offset;
         let mut x = match app_config.horizontal_align {
-            utils::HorizontalAlign::Left => desktop_window.pos.0 as i16,
+            utils::HorizontalAlign::Left => (desktop_window.pos.0 + x_offset) as i16,
             utils::HorizontalAlign::Center => {
                 (desktop_window.pos.0 + desktop_window.size.0 / 2 - i32::from(width) / 2) as i16
             }
             utils::HorizontalAlign::Right => {
-                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width)) as i16
+                (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width) - x_offset) as i16
             }
         };
 
+        let y_offset = app_config.y_offset;
         let y = match app_config.vertical_align {
-            utils::VerticalAlign::Top => desktop_window.pos.1 as i16,
+            utils::VerticalAlign::Top => (desktop_window.pos.1 + y_offset) as i16,
             utils::VerticalAlign::Center => {
                 (desktop_window.pos.1 + desktop_window.size.1 / 2 - i32::from(height) / 2) as i16
             }
             utils::VerticalAlign::Bottom => {
-                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height)) as i16
+                (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height) - y_offset) as i16
             }
         };
 

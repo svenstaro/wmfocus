@@ -67,6 +67,7 @@ OPTIONS:
                                            sadfjklewcmpgh]
     -m, --margin <margin>                  Add an additional margin around the text box (value is a factor of the box
                                            size) [default: 0.2]
+    -o, --offset <offset>                  Offset box from edge of window (x,y) [default: 0,0]
 ```
 
 

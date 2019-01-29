@@ -78,6 +78,22 @@ fn is_valid_color(c: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Validate coordinates.
+fn is_valid_coord(c: String) -> Result<(), String> {
+    let v: Vec<_> = c.split(',').collect();
+    let (x, y) = (v.get(0), v.get(1));
+    if x.is_none() || y.is_none() {
+        return Err("Expected x,y coordinates".to_string());
+    }
+    if let Err(e) = x.unwrap().parse::<i32>() {
+        return Err(e.description().to_string());
+    }
+    if let Err(e) = y.unwrap().parse::<i32>() {
+        return Err(e.description().to_string());
+    }
+    Ok(())
+}
+
 /// Load a system font.
 fn load_font(font_family: &str) -> Vec<u8> {
     let font_family_property = system_fonts::FontPropertyBuilder::new()
@@ -139,6 +155,15 @@ pub fn parse_args() -> AppConfig {
             .default_value("0.2")
             .help("Add an additional margin around the text box (value is a factor of the box size)"))
         .arg(
+            Arg::with_name("offset")
+            .short("o")
+            .long("offset")
+            .takes_value(true)
+            .allow_hyphen_values(true)
+            .validator(is_valid_coord)
+            .default_value("0,0")
+            .help("Offset box from edge of window relative to alignment (x,y)"))
+        .arg(
             Arg::with_name("text_color")
             .long("textcolor")
             .takes_value(true)
@@ -181,7 +206,7 @@ pub fn parse_args() -> AppConfig {
         .arg(
             Arg::with_name("fill")
             .long("fill")
-            .conflicts_with_all(&["horizontal_align", "vertical_align", "margin"])
+            .conflicts_with_all(&["horizontal_align", "vertical_align", "margin", "offset"])
             .display_order(102)
             .help("Completely fill out windows"))
         .arg(
@@ -196,6 +221,9 @@ pub fn parse_args() -> AppConfig {
     let (font_family, font_size) = (v[0].to_string(), v[1].parse::<f64>().unwrap());
     let hint_chars = value_t!(matches, "hint_chars", String).unwrap();
     let margin = value_t!(matches, "margin", f32).unwrap();
+    let offset = value_t!(matches, "offset", String).unwrap();
+    let v: Vec<_> = offset.split(',').collect();
+    let (x_offset, y_offset) = (v[0].parse::<i32>().unwrap(), v[1].parse::<i32>().unwrap());
     let text_color_unparsed = value_t!(matches, "text_color", CssColor).unwrap();
     let text_color = parse_color(text_color_unparsed);
     let text_color_alt_unparsed = value_t!(matches, "text_color_alt", CssColor).unwrap();
@@ -228,6 +256,8 @@ pub fn parse_args() -> AppConfig {
         print_only,
         horizontal_align,
         vertical_align,
+        x_offset,
+        y_offset,
     }
 }
 
