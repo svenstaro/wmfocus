@@ -1,5 +1,4 @@
 use cairo;
-use cairo::enums::{FontSlant, FontWeight};
 use cairo::prelude::SurfaceExt;
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, value_t, App, AppSettings, Arg,
@@ -328,8 +327,8 @@ pub fn draw_hint_text(rw: &RenderWindow, app_config: &AppConfig, text: &str, cur
 
     rw.cairo_context.select_font_face(
         &app_config.font_family,
-        FontSlant::Normal,
-        FontWeight::Normal,
+        cairo::FontSlant::Normal,
+        cairo::FontWeight::Normal,
     );
     rw.cairo_context.set_font_size(app_config.font_size);
     rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
