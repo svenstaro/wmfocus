@@ -19,7 +19,7 @@ i3 = ["i3ipc"]
 
 [dependencies]
 cairo-sys-rs = "0.8"
-clap = "2.31"
+clap = "2.33"
 css-color-parser = "0.1"
 font-loader = "0.8"
 i3ipc = { version = "0.10", optional = true }
