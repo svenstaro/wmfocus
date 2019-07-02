@@ -221,7 +221,7 @@ fn main() {
         let cairo_xcb_visual = unsafe {
             cairo::XCBVisualType::from_raw_none(raw_visualtype as *mut cairo_sys::xcb_visualtype_t)
         };
-        let surface = <cairo::Surface as cairo::XCBSurface>::create(
+        let surface = cairo::XCBSurface::create(
             &cairo_xcb_conn,
             &cairo_xcb_drawable,
             &cairo_xcb_visual,

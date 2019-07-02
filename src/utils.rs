@@ -1,5 +1,4 @@
 use cairo;
-use cairo::prelude::SurfaceExt;
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, value_t, App, AppSettings, Arg,
 };
