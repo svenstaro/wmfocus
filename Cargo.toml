@@ -31,7 +31,7 @@ xcb = "0.8"
 xkbcommon = "0.4"
 
 [dependencies.cairo-rs]
-version = "0.7.0"
+version = "0.7.1"
 features = ["xcb"]
 
 [dependencies.xcb-util]
