@@ -35,7 +35,7 @@ version = "0.7.1"
 features = ["xcb"]
 
 [dependencies.xcb-util]
-version = "0.2"
+version = "0.3"
 features = ["keysyms"]
 
 [dependencies.x11]
