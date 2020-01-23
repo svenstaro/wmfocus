@@ -228,7 +228,7 @@ fn main() {
             width.into(),
             height.into(),
         );
-        let cairo_context = cairo::Context::new(&surface);
+        let cairo_context = cairo::Context::new(&surface.expect("Error while creating surface"));
 
         let render_window = RenderWindow {
             desktop_window,

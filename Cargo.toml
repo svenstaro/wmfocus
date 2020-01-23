@@ -27,15 +27,15 @@ itertools = "0.8"
 log = "0.4"
 pretty_env_logger = "0.3"
 regex = "1.3"
-xcb = "0.8"
+xcb = "0.9"
 xkbcommon = "0.4"
 
 [dependencies.cairo-rs]
-version = "0.7.1"
+version = "0.8"
 features = ["xcb"]
 
 [dependencies.xcb-util]
-version = "0.2"
+version = "0.3"
 features = ["keysyms"]
 
 [dependencies.x11]
