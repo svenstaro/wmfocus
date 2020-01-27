@@ -39,7 +39,7 @@ version = "0.3"
 features = ["keysyms"]
 
 [dependencies.x11]
-version = "2.18.1"
+version = "2.18.2"
 features = ["xlib"]
 
 [profile.release]
