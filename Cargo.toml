@@ -23,7 +23,7 @@ clap = "2.33"
 css-color-parser = "0.1"
 font-loader = "0.8"
 i3ipc = { version = "0.10", optional = true }
-itertools = "0.8"
+itertools = "0.9"
 log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1.3"
