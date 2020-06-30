@@ -3,7 +3,6 @@
 [![Build Status](https://travis-ci.com/svenstaro/wmfocus.svg?branch=master)](https://travis-ci.com/svenstaro/wmfocus)
 [![AUR](https://img.shields.io/aur/version/wmfocus.svg)](https://aur.archlinux.org/packages/wmfocus/)
 [![Crates.io](https://img.shields.io/crates/v/wmfocus.svg)](https://crates.io/crates/wmfocus)
-[![dependency status](https://deps.rs/repo/github/svenstaro/wmfocus/status.svg)](https://deps.rs/repo/github/svenstaro/wmfocus)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/wmfocus/blob/master/LICENSE)
 
 This tool that allows you to rapidly choose a specific window directly without having to use the mouse or directional keyboard navigation.
