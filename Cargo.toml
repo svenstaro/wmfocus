@@ -18,10 +18,10 @@ maintenance = { status = "actively-developed" }
 i3 = ["i3ipc"]
 
 [dependencies]
-cairo-sys-rs = "0.9"
+cairo-sys-rs = "0.10"
 clap = "2.33"
 css-color-parser = "0.1"
-font-loader = "0.9"
+font-loader = "0.10"
 i3ipc = { version = "0.10", optional = true }
 itertools = "0.9"
 log = "0.4"
@@ -31,7 +31,7 @@ xcb = "0.9"
 xkbcommon = "0.4"
 
 [dependencies.cairo-rs]
-version = "0.8"
+version = "0.9"
 features = ["xcb"]
 
 [dependencies.xcb-util]
