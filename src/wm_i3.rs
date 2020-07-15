@@ -29,7 +29,7 @@ fn find_parent_of<'a>(start_node: &'a Node, child: &'a Node) -> Option<&'a Node>
     while !nodes_to_explore.is_empty() {
         let mut next_vec = vec![];
         for node in &nodes_to_explore {
-            if node.nodes.iter().find(|&x| child.id == x.id).is_some() {
+            if node.nodes.iter().any(|x| child.id == x.id) {
                 return Some(node);
             }
             next_vec.extend(node.nodes.iter());

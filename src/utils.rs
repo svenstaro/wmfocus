@@ -1,4 +1,3 @@
-use cairo;
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, value_t, App, AppSettings, Arg,
 };
@@ -11,7 +10,6 @@ use std::iter;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use xcb;
 use xcb::ffi::xcb_visualid_t;
 
 use crate::{AppConfig, DesktopWindow, RenderWindow};
@@ -64,7 +62,7 @@ fn is_truetype_font(f: String) -> Result<(), String> {
         return Err("From font format".to_string());
     }
     if let Err(e) = size.unwrap().parse::<f32>() {
-        return Err(e.to_string().to_string());
+        return Err(e.to_string());
     }
     Ok(())
 }
@@ -83,10 +81,10 @@ fn is_valid_coord(c: String) -> Result<(), String> {
         return Err("Expected x,y coordinates".to_string());
     }
     if let Err(e) = x.unwrap().parse::<i32>() {
-        return Err(e.to_string().to_string());
+        return Err(e.to_string());
     }
     if let Err(e) = y.unwrap().parse::<i32>() {
-        return Err(e.to_string().to_string());
+        return Err(e.to_string());
     }
     Ok(())
 }
