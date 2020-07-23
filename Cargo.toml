@@ -21,7 +21,7 @@ i3 = ["i3ipc"]
 cairo-sys-rs = "0.10"
 clap = "2.33"
 css-color-parser = "0.1"
-font-loader = "0.10"
+font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
 itertools = "0.9"
 log = "0.4"
