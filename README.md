@@ -97,7 +97,7 @@ This tool is heavily inspired by [i3-easyfocus](https://github.com/cornerman/i3-
 
 This is mostly a note for me on how to release this thing:
 
-- Update `README.md`, `Cargo.toml`.
-- `git commit` and `git tag -s`, `git push`.
-- `cargo publish`
+- `cargo release --dry-run`
+- `cargo release`
+- Release will automatically be deployed by Github Actions.
 - Update AUR package.
