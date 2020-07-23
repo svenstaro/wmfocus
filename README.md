@@ -1,7 +1,6 @@
 # wmfocus - Visually focus windows by label
 
 [![CI](https://github.com/svenstaro/wmfocus/workflows/CI/badge.svg)](https://github.com/svenstaro/wmfocus/actions)
-[![Build Status](https://travis-ci.com/svenstaro/wmfocus.svg?branch=master)](https://travis-ci.com/svenstaro/wmfocus)
 [![AUR](https://img.shields.io/aur/version/wmfocus.svg)](https://aur.archlinux.org/packages/wmfocus/)
 [![Crates.io](https://img.shields.io/crates/v/wmfocus.svg)](https://crates.io/crates/wmfocus)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/wmfocus/blob/master/LICENSE)
