@@ -1,9 +1,12 @@
 # wmfocus - Visually focus windows by label
 
+[![CI](https://github.com/svenstaro/wmfocus/workflows/CI/badge.svg)](https://github.com/svenstaro/wmfocus/actions)
 [![Build Status](https://travis-ci.com/svenstaro/wmfocus.svg?branch=master)](https://travis-ci.com/svenstaro/wmfocus)
 [![AUR](https://img.shields.io/aur/version/wmfocus.svg)](https://aur.archlinux.org/packages/wmfocus/)
 [![Crates.io](https://img.shields.io/crates/v/wmfocus.svg)](https://crates.io/crates/wmfocus)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/wmfocus/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/svenstaro/wmfocus.svg)](https://github.com/svenstaro/wmfocus/stargazers)
+[![Lines of Code](https://tokei.rs/b1/github/svenstaro/wmfocus)](https://github.com/svenstaro/wmfocus)
 
 This tool that allows you to rapidly choose a specific window directly without having to use the mouse or directional keyboard navigation.
 
