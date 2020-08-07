@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly]
+        rust: [stable, nightly]
 
     steps:
       - run: sudo apt install libfontconfig1-dev libxkbcommon-dev libxcb-keysyms1-dev
