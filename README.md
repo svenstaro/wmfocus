@@ -36,7 +36,7 @@ Use a different font (as provided by fontconfig):
 
 Change up the default colors:
 
-    wmfocus --textcolor red --textcoloralt #eeeeee --bgcolor "rgba(50, 50, 200, 0.5)"
+    wmfocus --textcolor red --textcoloralt "#eeeeee" --bgcolor "rgba(50, 50, 200, 0.5)"
 
 wmfocus will make use of a compositor to get real transparency.
 
