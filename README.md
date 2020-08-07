@@ -71,6 +71,14 @@ OPTIONS:
     -o, --offset <offset>                  Offset box from edge of window (x,y) [default: 0,0]
 ```
 
+## Troubleshooting
+
+If there's some funky stuff, you can try to track it down by running `wmfocus` with `RUST_LOG=trace`:
+
+    RUST_LOG=trace wmfocus
+
+This will print quite some useful debugging info.
+
 
 ## Compiling
 
