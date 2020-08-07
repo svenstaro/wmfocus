@@ -1,5 +1,6 @@
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
+use log::{info, warn};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
@@ -23,18 +24,20 @@ arg_enum! {
 
 /// Load a system font.
 fn load_font(font_family: &str) -> Vec<u8> {
-    let font_family_property = system_fonts::FontPropertyBuilder::new()
+    let mut font_family_property = system_fonts::FontPropertyBuilder::new()
         .family(font_family)
         .build();
+    let info = system_fonts::query_specific(&mut font_family_property);
+    info!("Returned effective font is: {:?}", info);
     let (loaded_font, _) =
         if let Some((loaded_font, index)) = system_fonts::get(&font_family_property) {
             (loaded_font, index)
         } else {
-            eprintln!("Family not found, falling back to first Monospace font");
+            warn!("Family not found, falling back to first Monospace font");
             let mut font_monospace_property =
                 system_fonts::FontPropertyBuilder::new().monospace().build();
             let sysfonts = system_fonts::query_specific(&mut font_monospace_property);
-            eprintln!("Falling back to font '{font}'", font = sysfonts[0]);
+            warn!("Falling back to font '{font}'", font = sysfonts[0]);
             let (loaded_font, index) =
                 system_fonts::get(&font_monospace_property).expect("Couldn't find suitable font");
             (loaded_font, index)
