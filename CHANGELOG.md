@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Rewrite argument parsing to be more robust [#63](https://github.com/svenstaro/wmfocus/issues/63)
 
 ## [1.1.3] - 2019-07-02
 - Add offset parameter [#17](https://github.com/svenstaro/wmfocus/pull/17) (thanks @jeffmhubbard)

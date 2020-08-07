@@ -15,7 +15,6 @@ i3 = ["i3ipc"]
 
 [dependencies]
 cairo-sys-rs = "0.10"
-clap = "2.33"
 css-color-parser = "0.1"
 font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
@@ -23,6 +22,7 @@ itertools = "0.9"
 log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1.3"
+structopt = "0.3"
 xcb = "0.9"
 xkbcommon = "0.4"
 

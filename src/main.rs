@@ -1,11 +1,12 @@
-use clap::crate_name;
 use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::iter::Iterator;
 use std::time::Duration;
+use structopt::clap::crate_name;
 use xkbcommon::xkb;
 
+mod args;
 mod utils;
 
 #[cfg(feature = "i3")]
@@ -34,28 +35,10 @@ pub struct RenderWindow<'a> {
     rect: (i32, i32, i32, i32),
 }
 
-#[derive(Debug)]
-pub struct AppConfig {
-    pub font_family: String,
-    pub font_size: f64,
-    pub loaded_font: Vec<u8>,
-    pub hint_chars: String,
-    pub margin: f32,
-    pub text_color: (f64, f64, f64, f64),
-    pub text_color_alt: (f64, f64, f64, f64),
-    pub bg_color: (f64, f64, f64, f64),
-    pub fill: bool,
-    pub print_only: bool,
-    pub horizontal_align: utils::HorizontalAlign,
-    pub vertical_align: utils::VerticalAlign,
-    pub x_offset: i32,
-    pub y_offset: i32,
-}
-
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
 fn main() {
     pretty_env_logger::init();
-    let app_config = utils::parse_args();
+    let app_config = args::parse_args();
 
     // Get the windows from each specific window manager implementation.
     let desktop_windows_raw = wm::get_windows();
@@ -90,8 +73,11 @@ fn main() {
         );
 
         // Figure out how large the window actually needs to be.
-        let text_extents =
-            utils::extents_for_text(&hint, &app_config.font_family, app_config.font_size);
+        let text_extents = utils::extents_for_text(
+            &hint,
+            &app_config.font.font_family,
+            app_config.font.font_size,
+        );
         let (width, height, margin_width, margin_height) = if app_config.fill {
             (
                 desktop_window.size.0 as u16,
@@ -124,24 +110,24 @@ fn main() {
             desktop_window
         );
 
-        let x_offset = app_config.x_offset;
+        let x_offset = app_config.offset.x;
         let mut x = match app_config.horizontal_align {
-            utils::HorizontalAlign::Left => (desktop_window.pos.0 + x_offset) as i16,
-            utils::HorizontalAlign::Center => {
+            args::HorizontalAlign::Left => (desktop_window.pos.0 + x_offset) as i16,
+            args::HorizontalAlign::Center => {
                 (desktop_window.pos.0 + desktop_window.size.0 / 2 - i32::from(width) / 2) as i16
             }
-            utils::HorizontalAlign::Right => {
+            args::HorizontalAlign::Right => {
                 (desktop_window.pos.0 + desktop_window.size.0 - i32::from(width) - x_offset) as i16
             }
         };
 
-        let y_offset = app_config.y_offset;
+        let y_offset = app_config.offset.y;
         let y = match app_config.vertical_align {
-            utils::VerticalAlign::Top => (desktop_window.pos.1 + y_offset) as i16,
-            utils::VerticalAlign::Center => {
+            args::VerticalAlign::Top => (desktop_window.pos.1 + y_offset) as i16,
+            args::VerticalAlign::Center => {
                 (desktop_window.pos.1 + desktop_window.size.1 / 2 - i32::from(height) / 2) as i16
             }
-            utils::VerticalAlign::Bottom => {
+            args::VerticalAlign::Bottom => {
                 (desktop_window.pos.1 + desktop_window.size.1 - i32::from(height) - y_offset) as i16
             }
         };
