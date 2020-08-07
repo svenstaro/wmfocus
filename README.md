@@ -16,6 +16,8 @@ Thanks to cairo, it should work on all kinds of screens and automatically displa
 
 ## Installation
 
+<a href="https://repology.org/project/wmfocus/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/wmfocus.svg" alt="Packaging status"></a>
+
 **On Arch Linux**: [Get it from AUR](https://aur.archlinux.org/packages/wmfocus/)
 
 **With Cargo**: `cargo install --features i3 wmfocus`
