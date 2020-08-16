@@ -98,7 +98,7 @@ Then, just clone it like usual and `cargo run` to get output:
 While this tool is window manager-independent, an implementation for your favorite window manager might not yet be available. Current support:
 
 - i3
-- sway
+- sway (partial, accepting PRs)
 
 If you want to implement support for more window managers, have a look at the [i3 implementation](https://github.com/svenstaro/wmfocus/blob/master/src/wm_i3.rs).
 
