@@ -1,7 +1,7 @@
 [package]
 name = "wmfocus"
 description = "Visually focus windows by label"
-version = "1.1.5"
+version = "1.1.6-alpha.0"
 repository = "https://github.com/svenstaro/wmfocus"
 authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>"]
 license = "MIT"
