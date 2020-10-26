@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [1.1.5] - 2020-10-26
 - Fix horizontal positions of labels for tabbed layout [#70](https://github.com/svenstaro/wmfocus/issues/70)
 
 ## [1.1.4] - 2020-08-07
@@ -30,7 +32,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update to Rust 2018 edition
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/wmfocus/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/svenstaro/wmfocus/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/svenstaro/wmfocus/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/svenstaro/wmfocus/compare/1.1.3...v1.1.4
 [1.1.3]: https://github.com/svenstaro/wmfocus/compare/1.1.2...1.1.3
 [1.1.2]: https://github.com/svenstaro/wmfocus/compare/1.1.1...1.1.2
