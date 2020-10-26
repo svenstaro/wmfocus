@@ -1,6 +1,6 @@
 use i3ipc::reply::{Node, NodeLayout, NodeType, Workspace};
 use i3ipc::I3Connection;
-use log::info;
+use log::{debug, info};
 
 use crate::DesktopWindow;
 
@@ -57,14 +57,14 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
             if node.window.is_some() {
                 let root_node = find_parent_of(root_node, node);
 
-                let pos_x = if let Some(root_node) = root_node {
+                let (pos_x, size_x) = if let Some(root_node) = root_node {
                     if root_node.layout == NodeLayout::Tabbed {
-                        node.rect.0 + node.deco_rect.0
+                        (node.rect.0 + node.deco_rect.0, node.deco_rect.2)
                     } else {
-                        node.rect.0
+                        (node.rect.0, node.rect.2)
                     }
                 } else {
-                    node.rect.0
+                    (node.rect.0, node.rect.2)
                 };
 
                 let pos_y = if let Some(root_node) = root_node {
@@ -82,8 +82,9 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
                     x_window_id: node.window,
                     title: node.name.clone().unwrap_or_default(),
                     pos: (pos_x, pos_y),
-                    size: ((node.rect.2), (node.rect.3 + node.deco_rect.3)),
+                    size: (size_x, (node.rect.3 + node.deco_rect.3)),
                 };
+                debug!("Found {:?}", window);
                 windows.push(window);
             }
         }

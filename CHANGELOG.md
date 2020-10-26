@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix horizontal positions of labels for tabbed layout [#70](https://github.com/svenstaro/wmfocus/issues/70)
 
 ## [1.1.4] - 2020-08-07
 - Rewrite argument parsing to be more robust [#63](https://github.com/svenstaro/wmfocus/issues/63)
