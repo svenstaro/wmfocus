@@ -11,13 +11,13 @@ categories = ["command-line-utilities", "command-line-interface"]
 edition = "2018"
 
 [features]
-i3 = ["i3ipc"]
+i3 = ["swayipc"]
 
 [dependencies]
 cairo-sys-rs = "0.10"
 css-color-parser = "0.1"
 font-loader = "0.11"
-i3ipc = { version = "0.10", optional = true }
+swayipc = { git = "https://github.com/JayceFayne/swayipc-rs", optional = true }
 itertools = "0.9"
 log = "0.4"
 pretty_env_logger = "0.4"

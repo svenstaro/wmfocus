@@ -10,9 +10,6 @@ mod args;
 mod utils;
 
 #[cfg(feature = "i3")]
-extern crate i3ipc;
-
-#[cfg(feature = "i3")]
 mod wm_i3;
 
 #[cfg(feature = "i3")]
@@ -21,7 +18,7 @@ use crate::wm_i3 as wm;
 #[derive(Debug)]
 pub struct DesktopWindow {
     id: i64,
-    x_window_id: Option<i32>,
+    x_window_id: Option<i64>,
     title: String,
     pos: (i32, i32),
     size: (i32, i32),

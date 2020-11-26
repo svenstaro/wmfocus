@@ -1,6 +1,5 @@
-use i3ipc::reply::{Node, NodeLayout, NodeType, Workspace};
-use i3ipc::I3Connection;
 use log::{debug, info};
+use swayipc::{Connection, Node, NodeLayout, NodeType, Workspace};
 
 use crate::DesktopWindow;
 
@@ -42,7 +41,7 @@ fn find_parent_of<'a>(start_node: &'a Node, child: &'a Node) -> Option<&'a Node>
 /// Return a list of all `DesktopWindow`s for the given `Workspace`.
 fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> {
     let workspace_node = find_first_node_with_attr(&root_node, |x| {
-        x.name == Some(workspace.name.clone()) && x.nodetype == NodeType::Workspace
+        x.name == Some(workspace.name.clone()) && x.node_type == NodeType::Workspace
     })
     .expect("Couldn't find the Workspace node");
 
@@ -54,39 +53,38 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
         for node in &nodes_to_explore {
             next_vec.extend(node.nodes.iter());
             next_vec.extend(node.floating_nodes.iter());
-            if node.window.is_some() {
-                let root_node = find_parent_of(root_node, node);
 
-                let (pos_x, size_x) = if let Some(root_node) = root_node {
-                    if root_node.layout == NodeLayout::Tabbed {
-                        (node.rect.0 + node.deco_rect.0, node.deco_rect.2)
-                    } else {
-                        (node.rect.0, node.rect.2)
-                    }
+            let root_node = find_parent_of(root_node, node);
+
+            let (pos_x, size_x) = if let Some(root_node) = root_node {
+                if root_node.layout == NodeLayout::Tabbed {
+                    (node.rect.x + node.deco_rect.x, node.deco_rect.width)
                 } else {
-                    (node.rect.0, node.rect.2)
-                };
+                    (node.rect.x, node.rect.width)
+                }
+            } else {
+                (node.rect.x, node.rect.width)
+            };
 
-                let pos_y = if let Some(root_node) = root_node {
-                    if root_node.layout == NodeLayout::Stacked {
-                        root_node.rect.1 + node.deco_rect.1
-                    } else {
-                        node.rect.1 - node.deco_rect.3
-                    }
+            let pos_y = if let Some(root_node) = root_node {
+                if root_node.layout == NodeLayout::Stacked {
+                    root_node.rect.y + node.deco_rect.y
                 } else {
-                    node.rect.1 - node.deco_rect.3
-                };
+                    node.rect.y - node.deco_rect.height
+                }
+            } else {
+                node.rect.y - node.deco_rect.height
+            };
 
-                let window = DesktopWindow {
-                    id: node.id,
-                    x_window_id: node.window,
-                    title: node.name.clone().unwrap_or_default(),
-                    pos: (pos_x, pos_y),
-                    size: (size_x, (node.rect.3 + node.deco_rect.3)),
-                };
-                debug!("Found {:?}", window);
-                windows.push(window);
-            }
+            let window = DesktopWindow {
+                id: node.id,
+                x_window_id: node.window,
+                title: node.name.clone().unwrap_or_default(),
+                pos: (pos_x, pos_y),
+                size: (size_x, (node.rect.height + node.deco_rect.height)),
+            };
+            debug!("Found {:?}", window);
+            windows.push(window);
         }
         nodes_to_explore = next_vec;
     }
@@ -95,12 +93,11 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
 
 /// Return a list of all windows.
 pub fn get_windows() -> Vec<DesktopWindow> {
-    // Establish a connection to i3 over a unix socket
-    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
+    // Establish a connection to i3/sway over a unix socket
+    let mut connection = Connection::new().expect("Couldn't acquire i3 connection");
     let workspaces = connection
         .get_workspaces()
-        .expect("Problem communicating with i3")
-        .workspaces;
+        .expect("Problem communicating with ipc");
     let visible_workspaces = workspaces.iter().filter(|w| w.visible);
     let root_node = connection.get_tree().expect("Uh");
     let mut windows = vec![];
@@ -112,7 +109,7 @@ pub fn get_windows() -> Vec<DesktopWindow> {
 
 /// Focus a specific `window`.
 pub fn focus_window(window: &DesktopWindow) {
-    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
+    let mut connection = Connection::new().expect("Couldn't acquire i3 connection");
     let command_str = format!("[con_id=\"{}\"] focus", window.id);
     let command = connection
         .run_command(&command_str)
