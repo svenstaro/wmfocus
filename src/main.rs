@@ -269,14 +269,7 @@ fn main() {
                             closed = true;
                         }
 
-                        // In case this a valid character, add it to list of pressed keys.
-                        if app_config.hint_chars.contains(kstr) {
-                            info!("Adding '{}' to key sequence", kstr);
-                            pressed_keys.push_str(kstr);
-                        } else {
-                            warn!("Pressed key '{}' is not a valid hint characters", kstr);
-                            closed = true;
-                        }
+                        pressed_keys.push_str(kstr);
 
                         info!("Current key sequence: '{}'", pressed_keys);
 
