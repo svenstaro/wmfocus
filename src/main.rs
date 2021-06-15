@@ -236,6 +236,7 @@ fn main() {
     // to enter a sequence in order to get to the correct window.
     // We'll have to track the keys pressed so far.
     let mut pressed_keys = String::default();
+    let mut key_sequence = Vec::new();
     let mut closed = false;
     while !closed {
         let event = conn.wait_for_event();
@@ -255,6 +256,9 @@ fn main() {
                     xcb::BUTTON_PRESS => {
                         closed = true;
                     }
+                    xcb::KEY_RELEASE => {
+                        key_sequence.pop();
+                    }
                     xcb::KEY_PRESS => {
                         let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
 
@@ -265,11 +269,14 @@ fn main() {
                                 .to_str()
                                 .expect("Couldn't create Rust string from C string")
                         };
-                        if ksym == xkb::KEY_Escape {
-                            closed = true;
-                        }
 
                         pressed_keys.push_str(kstr);
+                        key_sequence.push(kstr);
+
+                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&key_sequence.join("+")) {
+                            closed = true;
+                            continue;
+                        }
 
                         info!("Current key sequence: '{}'", pressed_keys);
 
@@ -297,7 +304,8 @@ fn main() {
                             continue;
                         } else {
                             warn!("No more matches possible with current key sequence");
-                            closed = true;
+                            closed = app_config.exit_keys.is_empty();
+                            pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
                         }
                     }
                     _ => {}

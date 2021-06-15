@@ -160,6 +160,10 @@ pub struct AppConfig {
     /// Offset box from edge of window relative to alignment (x,y)
     #[structopt(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
+
+    /// List of keys to exit application
+    #[structopt(short, long)]
+    pub exit_keys: Vec<String>,
 }
 
 pub fn parse_args() -> AppConfig {
