@@ -273,7 +273,7 @@ fn main() {
                         pressed_keys.push_str(kstr);
                         key_sequence.push(kstr);
 
-                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&key_sequence.join("+")) {
+                        if ksym == xkb::KEY_Escape || utils::in_exit(&key_sequence, &app_config.exit_keys) {
                             closed = true;
                             continue;
                         }
@@ -305,7 +305,7 @@ fn main() {
                         } else {
                             warn!("No more matches possible with current key sequence");
                             closed = app_config.exit_keys.is_empty();
-                            pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
+                            utils::remove_last_key(&mut pressed_keys, &kstr);
                         }
                     }
                     _ => {}

@@ -215,6 +215,17 @@ pub fn find_overlaps(
     overlaps
 }
 
+/// Remove last pressed key from pressed keys
+pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
+    pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
+}
+
+/// Check if pressed key sequence is in the list of sequences for exit
+pub fn in_exit(key_sequence: &Vec<&str>, exit_keys: &Vec<String>) -> bool {
+    let separator = "+";
+    exit_keys.contains(&key_sequence.join(separator))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
