@@ -220,10 +220,33 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
     pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
 }
 
-/// Check if pressed key sequence is in the list of sequences for exit
-pub fn in_exit(key_sequence: &Vec<&str>, exit_keys: &Vec<String>) -> bool {
-    let separator = "+";
-    exit_keys.contains(&key_sequence.join(separator))
+/// Struct helps to write sequence and check if it is found in list of exit sequences
+pub struct ExitSequence<'a> {
+    sequence: Vec<String>,
+    exit_keys: &'a Vec<String>
+}
+
+impl<'a> ExitSequence<'a> {
+    pub fn new(exit_keys: &'a Vec<String>) -> ExitSequence<'a> {
+
+        ExitSequence {
+            sequence: Vec::new(),
+            exit_keys: exit_keys,
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<String> {
+        self.sequence.pop()
+    }
+
+    pub fn push(&mut self, key: String) {
+        self.sequence.push(key);
+    }
+
+    pub fn is_exit(&self) -> bool {
+        let separator = "+";
+        self.exit_keys.contains(&self.sequence.join(separator))
+    }
 }
 
 #[cfg(test)]

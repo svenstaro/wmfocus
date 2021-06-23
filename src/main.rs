@@ -236,7 +236,8 @@ fn main() {
     // to enter a sequence in order to get to the correct window.
     // We'll have to track the keys pressed so far.
     let mut pressed_keys = String::default();
-    let mut key_sequence = Vec::new();
+    let mut sequence = utils::ExitSequence::new(&app_config.exit_keys);
+
     let mut closed = false;
     while !closed {
         let event = conn.wait_for_event();
@@ -257,7 +258,7 @@ fn main() {
                         closed = true;
                     }
                     xcb::KEY_RELEASE => {
-                        key_sequence.pop();
+                        sequence.pop();
                     }
                     xcb::KEY_PRESS => {
                         let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
@@ -271,9 +272,9 @@ fn main() {
                         };
 
                         pressed_keys.push_str(kstr);
-                        key_sequence.push(kstr);
+                        sequence.push(kstr.to_owned());
 
-                        if ksym == xkb::KEY_Escape || utils::in_exit(&key_sequence, &app_config.exit_keys) {
+                        if ksym == xkb::KEY_Escape || sequence.is_exit() {
                             closed = true;
                             continue;
                         }
