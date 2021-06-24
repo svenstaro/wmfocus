@@ -289,7 +289,9 @@ fn main() {
                         // is not then we will also just exit and focus no new window.
                         // If there still is a chance we might find a window then we'll just
                         // keep going for now.
-                        if let Some(rw) = &render_windows.get(&pressed_keys) {
+                        if sequence.is_started() {
+                            utils::remove_last_key(&mut pressed_keys, &kstr);
+                        } else if let Some(rw) = &render_windows.get(&pressed_keys) {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));

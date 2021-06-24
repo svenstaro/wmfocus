@@ -247,6 +247,11 @@ impl<'a> ExitSequence<'a> {
         let separator = "+";
         self.exit_keys.contains(&self.sequence.join(separator))
     }
+
+    /// Sequence is started if more than one key is pressed
+    pub fn is_started(&self) -> bool {
+        self.sequence.len() > 1
+    }
 }
 
 #[cfg(test)]
