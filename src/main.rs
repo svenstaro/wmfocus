@@ -248,7 +248,7 @@ fn main() {
                 match r {
                     xcb::EXPOSE => {
                         for (hint, rw) in &render_windows {
-                            utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
+                            utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                             conn.flush();
                         }
                     }
@@ -293,12 +293,12 @@ fn main() {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                wm::focus_window(&rw.desktop_window);
+                                wm::focus_window(rw.desktop_window);
                             }
                             closed = true;
                         } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
                             for (hint, rw) in &render_windows {
-                                utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
+                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                                 conn.flush();
                             }
                             continue;

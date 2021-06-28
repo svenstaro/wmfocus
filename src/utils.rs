@@ -127,7 +127,7 @@ pub fn snatch_keyboard(
             ));
         }
         let grab_keyboard_cookie = xcb::xproto::grab_keyboard(
-            &conn,
+            conn,
             true,
             screen.root(),
             xcb::CURRENT_TIME,
@@ -163,7 +163,7 @@ pub fn snatch_mouse(
             ));
         }
         let grab_pointer_cookie = xcb::xproto::grab_pointer(
-            &conn,
+            conn,
             true,
             screen.root(),
             xcb::EVENT_MASK_BUTTON_PRESS as u16,
