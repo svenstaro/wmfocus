@@ -4,6 +4,8 @@ use log::{info, warn};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
+use crate::utils;
+
 arg_enum! {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum HorizontalAlign {
@@ -109,6 +111,13 @@ pub struct FontConfig {
     pub loaded_font: Vec<u8>,
 }
 
+/// Split exit sequence by '+', also sort sequence
+fn parse_exit_keys(s: &str) -> Vec<String> {
+    let mut sequence: Vec<String> = s.split("+").map(|s| s.to_string()).collect();
+    utils::ExitSequence::sort(&mut sequence);
+    sequence
+}
+
 #[derive(StructOpt, Debug)]
 #[structopt(
     name = "wmfocus",
@@ -162,8 +171,8 @@ pub struct AppConfig {
     pub offset: Offset,
 
     /// List of keys to exit application
-    #[structopt(short, long)]
-    pub exit_keys: Vec<String>,
+    #[structopt(short, long, parse(from_str = parse_exit_keys))]
+    pub exit_keys: Vec<Vec<String>>,
 }
 
 pub fn parse_args() -> AppConfig {

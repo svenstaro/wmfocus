@@ -223,16 +223,19 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
 /// Struct helps to write sequence and check if it is found in list of exit sequences
 pub struct ExitSequence<'a> {
     sequence: Vec<String>,
-    exit_keys: &'a Vec<String>
+    exit_keys: &'a Vec<Vec<String>>
 }
 
 impl<'a> ExitSequence<'a> {
-    pub fn new(exit_keys: &'a Vec<String>) -> ExitSequence<'a> {
-
+    pub fn new(exit_keys: &'a Vec<Vec<String>>) -> ExitSequence<'a> {
         ExitSequence {
             sequence: Vec::new(),
             exit_keys: exit_keys,
         }
+    }
+
+    pub fn sort(sequence: &mut Vec<String>) {
+        sequence.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     }
 
     pub fn pop(&mut self) -> Option<String> {
@@ -243,9 +246,9 @@ impl<'a> ExitSequence<'a> {
         self.sequence.push(key);
     }
 
-    pub fn is_exit(&self) -> bool {
-        let separator = "+";
-        self.exit_keys.contains(&self.sequence.join(separator))
+    pub fn is_exit(&mut self) -> bool {
+        ExitSequence::sort(&mut self.sequence);
+        self.exit_keys.contains(&self.sequence)
     }
 
     /// Sequence is started if more than one key is pressed
