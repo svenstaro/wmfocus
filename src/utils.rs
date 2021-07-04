@@ -221,21 +221,39 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
 }
 
 /// Struct helps to write sequence and check if it is found in list of exit sequences
-pub struct ExitSequence<'a> {
+#[derive(Debug)]
+pub struct Sequence {
     sequence: Vec<String>,
-    exit_keys: &'a Vec<Vec<String>>
 }
 
-impl<'a> ExitSequence<'a> {
-    pub fn new(exit_keys: &'a Vec<Vec<String>>) -> ExitSequence<'a> {
-        ExitSequence {
-            sequence: Vec::new(),
-            exit_keys: exit_keys,
+impl Sequence {
+    pub fn new(string: Option<&str>) -> Sequence {
+
+        match string {
+            Some(string) => {
+                let mut vec: Vec<String> = Sequence::explode(string, "+");
+
+                Sequence::sort(&mut vec);
+
+                Sequence {
+                    sequence: vec,
+                }
+            },
+            None => {
+                Sequence {
+                    sequence: Vec::new(),
+                }
+            }
         }
     }
 
-    pub fn sort(sequence: &mut Vec<String>) {
-        sequence.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    fn explode(string: &str, separator: &str) -> Vec<String> {
+        string.split(separator).map(|s| s.to_string()).collect()
+    }
+
+    /// Sort vector alphabetically
+    fn sort(vec: &mut Vec<String>) {
+        vec.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     }
 
     pub fn pop(&mut self) -> Option<String> {
@@ -244,16 +262,18 @@ impl<'a> ExitSequence<'a> {
 
     pub fn push(&mut self, key: String) {
         self.sequence.push(key);
-    }
-
-    pub fn is_exit(&mut self) -> bool {
-        ExitSequence::sort(&mut self.sequence);
-        self.exit_keys.contains(&self.sequence)
+        Sequence::sort(&mut self.sequence);
     }
 
     /// Sequence is started if more than one key is pressed
     pub fn is_started(&self) -> bool {
         self.sequence.len() > 1
+    }
+}
+
+impl PartialEq for Sequence {
+    fn eq(&self, other: &Self) -> bool {
+        self.sequence.eq(&other.sequence)
     }
 }
 

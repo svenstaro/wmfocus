@@ -236,7 +236,7 @@ fn main() {
     // to enter a sequence in order to get to the correct window.
     // We'll have to track the keys pressed so far.
     let mut pressed_keys = String::default();
-    let mut sequence = utils::ExitSequence::new(&app_config.exit_keys);
+    let mut sequence = utils::Sequence::new(None);
 
     let mut closed = false;
     while !closed {
@@ -274,7 +274,7 @@ fn main() {
                         pressed_keys.push_str(kstr);
                         sequence.push(kstr.to_owned());
 
-                        if ksym == xkb::KEY_Escape || sequence.is_exit() {
+                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&sequence) {
                             closed = true;
                             continue;
                         }

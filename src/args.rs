@@ -111,11 +111,8 @@ pub struct FontConfig {
     pub loaded_font: Vec<u8>,
 }
 
-/// Split exit sequence by '+', also sort sequence
-fn parse_exit_keys(s: &str) -> Vec<String> {
-    let mut sequence: Vec<String> = s.split("+").map(|s| s.to_string()).collect();
-    utils::ExitSequence::sort(&mut sequence);
-    sequence
+fn parse_exit_keys(s: &str) -> utils::Sequence {
+    utils::Sequence::new(Some(s))
 }
 
 #[derive(StructOpt, Debug)]
@@ -172,7 +169,7 @@ pub struct AppConfig {
 
     /// List of keys to exit application
     #[structopt(short, long, parse(from_str = parse_exit_keys))]
-    pub exit_keys: Vec<Vec<String>>,
+    pub exit_keys: Vec<utils::Sequence>,
 }
 
 pub fn parse_args() -> AppConfig {
