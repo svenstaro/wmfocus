@@ -5,6 +5,7 @@ use std::iter;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use xcb::ffi::xcb_visualid_t;
+use std::ffi::CStr;
 
 use crate::args::AppConfig;
 use crate::{DesktopWindow, RenderWindow};
@@ -220,6 +221,20 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
     pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
 }
 
+pub fn get_pressed_symbol<'a>(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
+    let key_press: &xcb::KeyPressEvent  = unsafe { xcb::cast_event(&event) };
+    let syms = xcb_util::keysyms::KeySymbols::new(&conn);
+    syms.press_lookup_keysym(key_press, 0)
+}
+
+pub fn convert_to_string<'a>(symbol: u32) -> &'a str {
+    unsafe {
+        CStr::from_ptr(x11::xlib::XKeysymToString(symbol.into()))
+            .to_str()
+            .expect("Couldn't create Rust string from C string")
+    }
+}
+
 /// Struct helps to write sequence and check if it is found in list of exit sequences
 #[derive(Debug)]
 pub struct Sequence {
@@ -256,8 +271,8 @@ impl Sequence {
         vec.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     }
 
-    pub fn pop(&mut self) -> Option<String> {
-        self.sequence.pop()
+    pub fn remove(&mut self, key: &str) {
+        self.sequence.retain(|x| x != key);
     }
 
     pub fn push(&mut self, key: String) {

@@ -1,6 +1,5 @@
 use log::{debug, info, warn};
 use std::collections::HashMap;
-use std::ffi::CStr;
 use std::iter::Iterator;
 use std::time::Duration;
 use structopt::clap::crate_name;
@@ -258,18 +257,13 @@ fn main() {
                         closed = true;
                     }
                     xcb::KEY_RELEASE => {
-                        sequence.pop();
+                        let ksym = utils::get_pressed_symbol(&conn, &event);
+                        let kstr = utils::convert_to_string(ksym);
+                        sequence.remove(&kstr);
                     }
                     xcb::KEY_PRESS => {
-                        let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
-
-                        let syms = xcb_util::keysyms::KeySymbols::new(&conn);
-                        let ksym = syms.press_lookup_keysym(key_press, 0);
-                        let kstr = unsafe {
-                            CStr::from_ptr(x11::xlib::XKeysymToString(ksym.into()))
-                                .to_str()
-                                .expect("Couldn't create Rust string from C string")
-                        };
+                        let ksym = utils::get_pressed_symbol(&conn, &event);
+                        let kstr = utils::convert_to_string(ksym);
 
                         pressed_keys.push_str(kstr);
                         sequence.push(kstr.to_owned());
