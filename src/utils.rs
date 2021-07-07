@@ -305,4 +305,36 @@ mod tests {
     fn test_no_intersect() {
         assert!(!intersects((1905, 705, 31, 82), (2000, 723, 38, 64)));
     }
+
+    #[test]
+    fn test_sequences_equal() {
+        let a = Sequence::new(Some("Control_L+Shift_L+a"));
+        let b = Sequence::new(Some("Control_L+a+Shift_L"));
+
+        assert_eq!(a, b);
+
+        let mut c = Sequence::new(None);
+
+        c.push("Shift_L".to_owned());
+        c.push("Control_L".to_owned());
+        c.push("a".to_owned());
+
+        assert_eq!(a, c);
+
+    }
+
+    #[test]
+    fn test_sequences_not_equal() {
+        let a = Sequence::new(Some("Control_L+Shift_L+a"));
+        let b = Sequence::new(Some("Control_L+a"));
+
+        assert_ne!(a, b);
+
+        let mut c = Sequence::new(None);
+
+        c.push("Shift_L".to_owned());
+        c.push("a".to_owned());
+
+        assert_ne!(a, c);
+    }
 }
