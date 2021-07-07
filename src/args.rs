@@ -167,7 +167,7 @@ pub struct AppConfig {
     #[structopt(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
 
-    /// List of keys to exit application
+    /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
     #[structopt(short, long, parse(from_str = parse_exit_keys))]
     pub exit_keys: Vec<utils::Sequence>,
 }
