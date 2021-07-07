@@ -243,7 +243,6 @@ pub struct Sequence {
 
 impl Sequence {
     pub fn new(string: Option<&str>) -> Sequence {
-
         match string {
             Some(string) => {
                 let mut vec: Vec<String> = Sequence::explode(string, "+");
@@ -320,7 +319,6 @@ mod tests {
         c.push("a".to_owned());
 
         assert_eq!(a, c);
-
     }
 
     #[test]
@@ -336,5 +334,21 @@ mod tests {
         c.push("a".to_owned());
 
         assert_ne!(a, c);
+    }
+
+    #[test]
+    fn test_sequences_is_started() {
+        let mut sequence = Sequence::new(None);
+        assert!(!sequence.is_started());
+
+        sequence.push("Control_L".to_owned());
+        assert!(!sequence.is_started());
+
+        sequence.push("g".to_owned());
+        assert!(sequence.is_started());
+
+        sequence.remove("g");
+
+        assert!(!sequence.is_started());
     }
 }
