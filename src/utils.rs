@@ -1,11 +1,11 @@
 use itertools::Itertools;
 use log::debug;
 use regex::Regex;
+use std::ffi::CStr;
 use std::iter;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use xcb::ffi::xcb_visualid_t;
-use std::ffi::CStr;
 
 use crate::args::AppConfig;
 use crate::{DesktopWindow, RenderWindow};
@@ -222,7 +222,7 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
 }
 
 pub fn get_pressed_symbol<'a>(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
-    let key_press: &xcb::KeyPressEvent  = unsafe { xcb::cast_event(&event) };
+    let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
     let syms = xcb_util::keysyms::KeySymbols::new(&conn);
     syms.press_lookup_keysym(key_press, 0)
 }
@@ -249,15 +249,11 @@ impl Sequence {
 
                 Sequence::sort(&mut vec);
 
-                Sequence {
-                    sequence: vec,
-                }
-            },
-            None => {
-                Sequence {
-                    sequence: Vec::new(),
-                }
+                Sequence { sequence: vec }
             }
+            None => Sequence {
+                sequence: Vec::new(),
+            },
         }
     }
 
