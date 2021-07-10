@@ -268,12 +268,13 @@ fn main() {
                         pressed_keys.push_str(kstr);
                         sequence.push(kstr.to_owned());
 
+                        info!("Current key sequence: '{}'", pressed_keys);
+
                         if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&sequence) {
+                            info!("{:?} is exit sequence", sequence);
                             closed = true;
                             continue;
                         }
-
-                        info!("Current key sequence: '{}'", pressed_keys);
 
                         // Attempt to match the current sequence of keys as a string to the window
                         // hints shown.
