@@ -128,7 +128,7 @@ pub fn snatch_keyboard(
             ));
         }
         let grab_keyboard_cookie = xcb::xproto::grab_keyboard(
-            &conn,
+            conn,
             true,
             screen.root(),
             xcb::CURRENT_TIME,
@@ -164,7 +164,7 @@ pub fn snatch_mouse(
             ));
         }
         let grab_pointer_cookie = xcb::xproto::grab_pointer(
-            &conn,
+            conn,
             true,
             screen.root(),
             xcb::EVENT_MASK_BUTTON_PRESS as u16,
@@ -221,9 +221,9 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
     pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
 }
 
-pub fn get_pressed_symbol<'a>(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
-    let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
-    let syms = xcb_util::keysyms::KeySymbols::new(&conn);
+pub fn get_pressed_symbol(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
+    let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(event) };
+    let syms = xcb_util::keysyms::KeySymbols::new(conn);
     syms.press_lookup_keysym(key_press, 0)
 }
 

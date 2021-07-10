@@ -41,7 +41,7 @@ fn find_parent_of<'a>(start_node: &'a Node, child: &'a Node) -> Option<&'a Node>
 
 /// Return a list of all `DesktopWindow`s for the given `Workspace`.
 fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> {
-    let workspace_node = find_first_node_with_attr(&root_node, |x| {
+    let workspace_node = find_first_node_with_attr(root_node, |x| {
         x.name == Some(workspace.name.clone()) && x.nodetype == NodeType::Workspace
     })
     .expect("Couldn't find the Workspace node");
@@ -105,7 +105,7 @@ pub fn get_windows() -> Vec<DesktopWindow> {
     let root_node = connection.get_tree().expect("Uh");
     let mut windows = vec![];
     for workspace in visible_workspaces {
-        windows.extend(crawl_windows(&root_node, &workspace));
+        windows.extend(crawl_windows(&root_node, workspace));
     }
     windows
 }

@@ -249,7 +249,7 @@ fn main() {
                 match r {
                     xcb::EXPOSE => {
                         for (hint, rw) in &render_windows {
-                            utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
+                            utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                             conn.flush();
                         }
                     }
@@ -259,7 +259,7 @@ fn main() {
                     xcb::KEY_RELEASE => {
                         let ksym = utils::get_pressed_symbol(&conn, &event);
                         let kstr = utils::convert_to_string(ksym);
-                        sequence.remove(&kstr);
+                        sequence.remove(kstr);
                     }
                     xcb::KEY_PRESS => {
                         let ksym = utils::get_pressed_symbol(&conn, &event);
@@ -284,25 +284,25 @@ fn main() {
                         // If there still is a chance we might find a window then we'll just
                         // keep going for now.
                         if sequence.is_started() {
-                            utils::remove_last_key(&mut pressed_keys, &kstr);
+                            utils::remove_last_key(&mut pressed_keys, kstr);
                         } else if let Some(rw) = &render_windows.get(&pressed_keys) {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                wm::focus_window(&rw.desktop_window);
+                                wm::focus_window(rw.desktop_window);
                             }
                             closed = true;
                         } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
                             for (hint, rw) in &render_windows {
-                                utils::draw_hint_text(&rw, &app_config, &hint, &pressed_keys);
+                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                                 conn.flush();
                             }
                             continue;
                         } else {
                             warn!("No more matches possible with current key sequence");
                             closed = app_config.exit_keys.is_empty();
-                            utils::remove_last_key(&mut pressed_keys, &kstr);
+                            utils::remove_last_key(&mut pressed_keys, kstr);
                         }
                     }
                     _ => {}
