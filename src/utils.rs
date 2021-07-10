@@ -236,7 +236,7 @@ pub fn convert_to_string<'a>(symbol: u32) -> &'a str {
 }
 
 /// Struct helps to write sequence and check if it is found in list of exit sequences
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Sequence {
     sequence: Vec<String>,
 }
@@ -278,12 +278,6 @@ impl Sequence {
     /// Sequence is started if more than one key is pressed
     pub fn is_started(&self) -> bool {
         self.sequence.len() > 1
-    }
-}
-
-impl PartialEq for Sequence {
-    fn eq(&self, other: &Self) -> bool {
-        self.sequence.eq(&other.sequence)
     }
 }
 
