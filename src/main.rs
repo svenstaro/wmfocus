@@ -265,8 +265,14 @@ fn main() {
                         let ksym = utils::get_pressed_symbol(&conn, &event);
                         let kstr = utils::convert_to_string(ksym);
 
-                        pressed_keys.push_str(kstr);
                         sequence.push(kstr.to_owned());
+
+                        if app_config.hint_chars.contains(kstr) {
+                            info!("Adding '{}' to key sequence", kstr);
+                            pressed_keys.push_str(kstr);
+                        } else {
+                            warn!("Pressed key '{}' is not a valid hint characters", kstr);
+                        }
 
                         info!("Current key sequence: '{}'", pressed_keys);
 
@@ -294,7 +300,9 @@ fn main() {
                                 wm::focus_window(rw.desktop_window);
                             }
                             closed = true;
-                        } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
+                        } else if !pressed_keys.is_empty()
+                            && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
+                        {
                             for (hint, rw) in &render_windows {
                                 utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                                 conn.flush();
