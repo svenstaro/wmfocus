@@ -218,7 +218,9 @@ pub fn find_overlaps(
 
 /// Remove last pressed key from pressed keys
 pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
-    pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
+    if pressed_keys.contains(kstr) {
+        pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
+    }
 }
 
 pub fn get_pressed_symbol(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
