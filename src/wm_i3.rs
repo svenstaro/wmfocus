@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use i3ipc::reply::{Node, NodeLayout, NodeType, Workspace};
 use i3ipc::I3Connection;
 use log::{debug, info};
@@ -40,11 +41,11 @@ fn find_parent_of<'a>(start_node: &'a Node, child: &'a Node) -> Option<&'a Node>
 }
 
 /// Return a list of all `DesktopWindow`s for the given `Workspace`.
-fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> {
+fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Result<Vec<DesktopWindow>> {
     let workspace_node = find_first_node_with_attr(root_node, |x| {
         x.name == Some(workspace.name.clone()) && x.nodetype == NodeType::Workspace
     })
-    .expect("Couldn't find the Workspace node");
+    .context("Couldn't find the Workspace node")?;
 
     let mut nodes_to_explore: Vec<&Node> = workspace_node.nodes.iter().collect();
     nodes_to_explore.extend(workspace_node.floating_nodes.iter());
@@ -90,32 +91,33 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Vec<DesktopWindow> 
         }
         nodes_to_explore = next_vec;
     }
-    windows
+    Ok(windows)
 }
 
 /// Return a list of all windows.
-pub fn get_windows() -> Vec<DesktopWindow> {
+pub fn get_windows() -> Result<Vec<DesktopWindow>> {
     // Establish a connection to i3 over a unix socket
-    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
+    let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
     let workspaces = connection
         .get_workspaces()
-        .expect("Problem communicating with i3")
+        .context("Problem communicating with i3")?
         .workspaces;
     let visible_workspaces = workspaces.iter().filter(|w| w.visible);
-    let root_node = connection.get_tree().expect("Uh");
+    let root_node = connection.get_tree()?;
     let mut windows = vec![];
     for workspace in visible_workspaces {
-        windows.extend(crawl_windows(&root_node, workspace));
+        windows.extend(crawl_windows(&root_node, workspace)?);
     }
-    windows
+    Ok(windows)
 }
 
 /// Focus a specific `window`.
-pub fn focus_window(window: &DesktopWindow) {
-    let mut connection = I3Connection::connect().expect("Couldn't acquire i3 connection");
+pub fn focus_window(window: &DesktopWindow) -> Result<()> {
+    let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
     let command_str = format!("[con_id=\"{}\"] focus", window.id);
     let command = connection
         .run_command(&command_str)
-        .expect("Couldn't communicate with i3");
+        .context("Couldn't communicate with i3")?;
     info!("Sending to i3: {:?}", command);
+    Ok(())
 }

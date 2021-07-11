@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::iter::Iterator;
@@ -35,19 +36,22 @@ pub struct RenderWindow<'a> {
 }
 
 #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
-fn main() {
+fn main() -> Result<()> {
     pretty_env_logger::init();
     let app_config = args::parse_args();
 
     // Get the windows from each specific window manager implementation.
-    let desktop_windows_raw = wm::get_windows();
+    let desktop_windows_raw = wm::get_windows().context("Couldn't get desktop windows")?;
 
     // Sort by position to make hint position more deterministic.
     let desktop_windows = utils::sort_by_pos(desktop_windows_raw);
 
-    let (conn, screen_num) = xcb::Connection::connect(None).unwrap();
+    let (conn, screen_num) = xcb::Connection::connect(None).context("No Xorg connection")?;
     let setup = conn.get_setup();
-    let screen = setup.roots().nth(screen_num as usize).unwrap();
+    let screen = setup
+        .roots()
+        .nth(screen_num as usize)
+        .context("Couldn't get screen")?;
 
     let values = [
         (xcb::CW_BACK_PIXEL, screen.black_pixel()),
@@ -69,14 +73,16 @@ fn main() {
             render_windows.keys().collect(),
             &app_config.hint_chars,
             desktop_windows.len(),
-        );
+        )
+        .context("Couldn't get next hint")?;
 
         // Figure out how large the window actually needs to be.
         let text_extents = utils::extents_for_text(
             &hint,
             &app_config.font.font_family,
             app_config.font.font_size,
-        );
+        )
+        .context("Couldn't create extents for text")?;
         let (width, height, margin_width, margin_height) = if app_config.fill {
             (
                 desktop_window.size.0 as u16,
@@ -180,7 +186,7 @@ fn main() {
         // Set transparency.
         let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
             .get_reply()
-            .expect("Couldn't create atom _NET_WM_WINDOW_OPACITY")
+            .context("Couldn't create atom _NET_WM_WINDOW_OPACITY")?
             .atom();
         let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u64;
         xcb::change_property(
@@ -195,7 +201,8 @@ fn main() {
 
         conn.flush();
 
-        let mut visual = utils::find_visual(&conn, screen.root_visual()).unwrap();
+        let mut visual =
+            utils::find_visual(&conn, screen.root_visual()).context("Couldn't find visual")?;
         let cairo_xcb_conn = unsafe {
             cairo::XCBConnection::from_raw_none(
                 conn.get_raw_conn() as *mut cairo_sys::xcb_connection_t
@@ -212,8 +219,10 @@ fn main() {
             &cairo_xcb_visual,
             width.into(),
             height.into(),
-        );
-        let cairo_context = cairo::Context::new(&surface.expect("Error while creating surface"));
+        )
+        .context("Couldn't create Cairo Surface")?;
+        let cairo_context =
+            cairo::Context::new(&surface).context("Couldn't create Cairo Context")?;
 
         let render_window = RenderWindow {
             desktop_window,
@@ -226,10 +235,10 @@ fn main() {
     }
 
     // Receive keyboard events.
-    utils::snatch_keyboard(&conn, &screen, Duration::from_secs(1)).unwrap();
+    utils::snatch_keyboard(&conn, &screen, Duration::from_secs(1))?;
 
     // Receive mouse events.
-    utils::snatch_mouse(&conn, &screen, Duration::from_secs(1)).unwrap();
+    utils::snatch_mouse(&conn, &screen, Duration::from_secs(1))?;
 
     // Since we might have lots of windows on the desktop, it might be required
     // to enter a sequence in order to get to the correct window.
@@ -249,7 +258,8 @@ fn main() {
                 match r {
                     xcb::EXPOSE => {
                         for (hint, rw) in &render_windows {
-                            utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
+                            utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
+                                .context("Couldn't draw hint text")?;
                             conn.flush();
                         }
                     }
@@ -258,12 +268,14 @@ fn main() {
                     }
                     xcb::KEY_RELEASE => {
                         let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym);
+                        let kstr = utils::convert_to_string(ksym)
+                            .context("Couldn't convert ksym to string")?;
                         sequence.remove(kstr);
                     }
                     xcb::KEY_PRESS => {
                         let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym);
+                        let kstr = utils::convert_to_string(ksym)
+                            .context("Couldn't convert ksym to string")?;
 
                         sequence.push(kstr.to_owned());
 
@@ -297,14 +309,16 @@ fn main() {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                wm::focus_window(rw.desktop_window);
+                                wm::focus_window(rw.desktop_window)
+                                    .context("Couldn't focus window")?;
                             }
                             closed = true;
                         } else if !pressed_keys.is_empty()
                             && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
                         {
                             for (hint, rw) in &render_windows {
-                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
+                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
+                                    .context("Couldn't draw hint text")?;
                                 conn.flush();
                             }
                             continue;
@@ -319,13 +333,17 @@ fn main() {
             }
         }
     }
+
+    Ok(())
 }
 
 #[cfg(not(any(feature = "i3", feature = "add_some_other_wm_here")))]
-fn main() {
+fn main() -> Result<()> {
     eprintln!(
         "You need to enable support for at least one window manager.\n
 Currently supported:
     --features i3"
     );
+
+    Ok(())
 }

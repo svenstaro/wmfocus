@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use log::{info, warn};
@@ -25,7 +26,7 @@ arg_enum! {
 }
 
 /// Load a system font.
-fn load_font(font_family: &str) -> Vec<u8> {
+fn load_font(font_family: &str) -> Result<Vec<u8>> {
     let mut font_family_property = system_fonts::FontPropertyBuilder::new()
         .family(font_family)
         .build();
@@ -40,28 +41,26 @@ fn load_font(font_family: &str) -> Vec<u8> {
                 system_fonts::FontPropertyBuilder::new().monospace().build();
             let sysfonts = system_fonts::query_specific(&mut font_monospace_property);
             warn!("Falling back to font '{font}'", font = sysfonts[0]);
-            let (loaded_font, index) =
-                system_fonts::get(&font_monospace_property).expect("Couldn't find suitable font");
+            let (loaded_font, index) = system_fonts::get(&font_monospace_property)
+                .context("Couldn't find suitable font")?;
             (loaded_font, index)
         };
-    loaded_font
+    Ok(loaded_font)
 }
 
 /// Generate a valid `FontConfig` from `f`.
 /// `f` is expected to be in format `Mono:72`.
-fn parse_truetype_font(f: &str) -> Result<FontConfig, String> {
+fn parse_truetype_font(f: &str) -> Result<FontConfig> {
     let v: Vec<_> = f.split(':').collect();
     let (family, size) = (
-        v.get(0).ok_or("Wrong font format")?,
-        v.get(1).ok_or("Wrong font format")?,
+        v.get(0).context("Wrong font format")?,
+        v.get(1).context("Wrong font format")?,
     );
 
-    let loaded_font = load_font(family);
+    let loaded_font = load_font(family).context("Couldn't load font")?;
     let font_config = FontConfig {
         font_family: family.to_string(),
-        font_size: size
-            .parse::<f64>()
-            .map_err(|_| "Couldn't parse font size".to_string())?,
+        font_size: size.parse::<f64>().context("Couldn't parse font size")?,
         loaded_font,
     };
     Ok(font_config)
