@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use log::debug;
 use regex::Regex;
+use std::ffi::CStr;
 use std::iter;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -215,6 +216,73 @@ pub fn find_overlaps(
     overlaps
 }
 
+/// Remove last pressed key from pressed keys
+pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
+    if pressed_keys.contains(kstr) {
+        pressed_keys.replace_range(pressed_keys.len() - kstr.len().., "");
+    }
+}
+
+pub fn get_pressed_symbol(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
+    let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(event) };
+    let syms = xcb_util::keysyms::KeySymbols::new(conn);
+    syms.press_lookup_keysym(key_press, 0)
+}
+
+pub fn convert_to_string<'a>(symbol: u32) -> &'a str {
+    unsafe {
+        CStr::from_ptr(x11::xlib::XKeysymToString(symbol.into()))
+            .to_str()
+            .expect("Couldn't create Rust string from C string")
+    }
+}
+
+/// Struct helps to write sequence and check if it is found in list of exit sequences
+#[derive(Debug, PartialEq)]
+pub struct Sequence {
+    sequence: Vec<String>,
+}
+
+impl Sequence {
+    pub fn new(string: Option<&str>) -> Sequence {
+        match string {
+            Some(string) => {
+                let mut vec: Vec<String> = Sequence::explode(string, "+");
+
+                Sequence::sort(&mut vec);
+
+                Sequence { sequence: vec }
+            }
+            None => Sequence {
+                sequence: Vec::new(),
+            },
+        }
+    }
+
+    fn explode(string: &str, separator: &str) -> Vec<String> {
+        string.split(separator).map(|s| s.to_string()).collect()
+    }
+
+    /// Sort vector alphabetically
+    fn sort(vec: &mut Vec<String>) {
+        vec.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    }
+
+    pub fn remove(&mut self, key: &str) {
+        self.sequence.retain(|x| x != key);
+    }
+
+    pub fn push(&mut self, key: String) {
+        self.sequence.push(key);
+        Sequence::sort(&mut self.sequence);
+    }
+
+    /// Sequence is started if more than one key is pressed
+    pub fn is_started(&self) -> bool {
+        self.sequence.len() > 1
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,5 +295,52 @@ mod tests {
     #[test]
     fn test_no_intersect() {
         assert!(!intersects((1905, 705, 31, 82), (2000, 723, 38, 64)));
+    }
+
+    #[test]
+    fn test_sequences_equal() {
+        let a = Sequence::new(Some("Control_L+Shift_L+a"));
+        let b = Sequence::new(Some("Control_L+a+Shift_L"));
+
+        assert_eq!(a, b);
+
+        let mut c = Sequence::new(None);
+
+        c.push("Shift_L".to_owned());
+        c.push("Control_L".to_owned());
+        c.push("a".to_owned());
+
+        assert_eq!(a, c);
+    }
+
+    #[test]
+    fn test_sequences_not_equal() {
+        let a = Sequence::new(Some("Control_L+Shift_L+a"));
+        let b = Sequence::new(Some("Control_L+a"));
+
+        assert_ne!(a, b);
+
+        let mut c = Sequence::new(None);
+
+        c.push("Shift_L".to_owned());
+        c.push("a".to_owned());
+
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn test_sequences_is_started() {
+        let mut sequence = Sequence::new(None);
+        assert!(!sequence.is_started());
+
+        sequence.push("Control_L".to_owned());
+        assert!(!sequence.is_started());
+
+        sequence.push("g".to_owned());
+        assert!(sequence.is_started());
+
+        sequence.remove("g");
+
+        assert!(!sequence.is_started());
     }
 }

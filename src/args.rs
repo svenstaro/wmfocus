@@ -4,6 +4,8 @@ use log::{info, warn};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
+use crate::utils;
+
 arg_enum! {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum HorizontalAlign {
@@ -109,6 +111,10 @@ pub struct FontConfig {
     pub loaded_font: Vec<u8>,
 }
 
+fn parse_exit_keys(s: &str) -> utils::Sequence {
+    utils::Sequence::new(Some(s))
+}
+
 #[derive(StructOpt, Debug)]
 #[structopt(
     name = "wmfocus",
@@ -160,6 +166,10 @@ pub struct AppConfig {
     /// Offset box from edge of window relative to alignment (x,y)
     #[structopt(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
+
+    /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
+    #[structopt(short, long, parse(from_str = parse_exit_keys))]
+    pub exit_keys: Vec<utils::Sequence>,
 }
 
 pub fn parse_args() -> AppConfig {

@@ -65,6 +65,8 @@ OPTIONS:
                                            values: left, center, right]
         --valign <vertical_align>          Vertical alignment of the box inside the window [default: top]  [possible
                                            values: top, center, bottom]
+    -e, --exit-keys <exit-keys>...         List of keys to exit application, sequence separator is space, key separator
+                                           is '+', eg Control_L+g Shift_L+f
     -f, --font <font>                      Use a specific TrueType font with this format: family:size [default: Mono:72]
     -c, --chars <hint_chars>               Define a set of possbile values to use as hint characters [default:
                                            sadfjklewcmpgh]

@@ -1,6 +1,5 @@
 use log::{debug, info, warn};
 use std::collections::HashMap;
-use std::ffi::CStr;
 use std::iter::Iterator;
 use std::time::Duration;
 use structopt::clap::crate_name;
@@ -236,6 +235,8 @@ fn main() {
     // to enter a sequence in order to get to the correct window.
     // We'll have to track the keys pressed so far.
     let mut pressed_keys = String::default();
+    let mut sequence = utils::Sequence::new(None);
+
     let mut closed = false;
     while !closed {
         let event = conn.wait_for_event();
@@ -255,30 +256,31 @@ fn main() {
                     xcb::BUTTON_PRESS => {
                         closed = true;
                     }
+                    xcb::KEY_RELEASE => {
+                        let ksym = utils::get_pressed_symbol(&conn, &event);
+                        let kstr = utils::convert_to_string(ksym);
+                        sequence.remove(kstr);
+                    }
                     xcb::KEY_PRESS => {
-                        let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(&event) };
+                        let ksym = utils::get_pressed_symbol(&conn, &event);
+                        let kstr = utils::convert_to_string(ksym);
 
-                        let syms = xcb_util::keysyms::KeySymbols::new(&conn);
-                        let ksym = syms.press_lookup_keysym(key_press, 0);
-                        let kstr = unsafe {
-                            CStr::from_ptr(x11::xlib::XKeysymToString(ksym.into()))
-                                .to_str()
-                                .expect("Couldn't create Rust string from C string")
-                        };
-                        if ksym == xkb::KEY_Escape {
-                            closed = true;
-                        }
+                        sequence.push(kstr.to_owned());
 
-                        // In case this a valid character, add it to list of pressed keys.
                         if app_config.hint_chars.contains(kstr) {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
                         } else {
                             warn!("Pressed key '{}' is not a valid hint characters", kstr);
-                            closed = true;
                         }
 
                         info!("Current key sequence: '{}'", pressed_keys);
+
+                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&sequence) {
+                            info!("{:?} is exit sequence", sequence);
+                            closed = true;
+                            continue;
+                        }
 
                         // Attempt to match the current sequence of keys as a string to the window
                         // hints shown.
@@ -288,7 +290,9 @@ fn main() {
                         // is not then we will also just exit and focus no new window.
                         // If there still is a chance we might find a window then we'll just
                         // keep going for now.
-                        if let Some(rw) = &render_windows.get(&pressed_keys) {
+                        if sequence.is_started() {
+                            utils::remove_last_key(&mut pressed_keys, kstr);
+                        } else if let Some(rw) = &render_windows.get(&pressed_keys) {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
@@ -296,7 +300,9 @@ fn main() {
                                 wm::focus_window(rw.desktop_window);
                             }
                             closed = true;
-                        } else if render_windows.keys().any(|k| k.starts_with(&pressed_keys)) {
+                        } else if !pressed_keys.is_empty()
+                            && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
+                        {
                             for (hint, rw) in &render_windows {
                                 utils::draw_hint_text(rw, &app_config, hint, &pressed_keys);
                                 conn.flush();
@@ -304,7 +310,8 @@ fn main() {
                             continue;
                         } else {
                             warn!("No more matches possible with current key sequence");
-                            closed = true;
+                            closed = app_config.exit_keys.is_empty();
+                            utils::remove_last_key(&mut pressed_keys, kstr);
                         }
                     }
                     _ => {}
