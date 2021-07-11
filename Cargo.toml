@@ -10,6 +10,10 @@ keywords = ["wm", "window", "manager", "i3"]
 categories = ["command-line-utilities", "command-line-interface"]
 edition = "2018"
 
+[profile.release]
+lto = true
+codegen-units = 1
+
 [features]
 i3 = ["i3ipc"]
 
@@ -37,7 +41,3 @@ features = ["keysyms"]
 [dependencies.x11]
 version = "2.18.2"
 features = ["xlib"]
-
-[profile.release]
-lto = true
-codegen-units = 1
