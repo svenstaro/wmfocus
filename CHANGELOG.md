@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add -e/--exit-keys to choose specific keys to quit wmfocus instead of every key (thanks @Rephobia)
 
 ## [1.1.5] - 2020-10-26
 - Fix horizontal positions of labels for tabbed layout [#70](https://github.com/svenstaro/wmfocus/issues/70)

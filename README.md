@@ -114,4 +114,4 @@ This is mostly a note for me on how to release this thing:
 - `cargo release --dry-run`
 - `cargo release`
 - Release will automatically be deployed by Github Actions.
-- Update AUR package.
+- Update Arch package.
