@@ -1,7 +1,6 @@
 # wmfocus - Visually focus windows by label
 
 [![CI](https://github.com/svenstaro/wmfocus/workflows/CI/badge.svg)](https://github.com/svenstaro/wmfocus/actions)
-[![AUR](https://img.shields.io/aur/version/wmfocus.svg)](https://aur.archlinux.org/packages/wmfocus/)
 [![Crates.io](https://img.shields.io/crates/v/wmfocus.svg)](https://crates.io/crates/wmfocus)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/wmfocus/blob/master/LICENSE)
 [![Stars](https://img.shields.io/github/stars/svenstaro/wmfocus.svg)](https://github.com/svenstaro/wmfocus/stargazers)
@@ -18,7 +17,7 @@ Thanks to cairo, it should work on all kinds of screens and automatically displa
 
 <a href="https://repology.org/project/wmfocus/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/wmfocus.svg" alt="Packaging status"></a>
 
-**On Arch Linux**: [Get it from AUR](https://aur.archlinux.org/packages/wmfocus/)
+**On Arch Linux**: `pacman -S miniserve`
 
 **With Cargo**: `cargo install --features i3 wmfocus`
 
