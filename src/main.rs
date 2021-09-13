@@ -3,7 +3,6 @@ use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::time::Duration;
-use structopt::clap::crate_name;
 use xkbcommon::xkb;
 
 mod args;
@@ -22,7 +21,6 @@ use crate::wm_i3 as wm;
 pub struct DesktopWindow {
     id: i64,
     x_window_id: Option<i32>,
-    title: String,
     pos: (i32, i32),
     size: (i32, i32),
 }
@@ -170,18 +168,6 @@ fn main() -> Result<()> {
         );
 
         xcb::map_window(&conn, xcb_window_id);
-
-        // Set title.
-        let title = crate_name!();
-        xcb::change_property(
-            &conn,
-            xcb::PROP_MODE_REPLACE as u8,
-            xcb_window_id,
-            xcb::ATOM_WM_NAME,
-            xcb::ATOM_STRING,
-            8,
-            title.as_bytes(),
-        );
 
         // Set transparency.
         let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
