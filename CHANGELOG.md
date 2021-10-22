@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Highlight currently selected window (also adds `--textcolorcurrent`, `--textcolorcurrentalt`, `--bgcolorcurrent`) [#82](https://github.com/svenstaro/wmfocus/issues/82)
 
 ## [1.2.0] - 2021-07-11
 - Add -e/--exit-keys to choose specific keys to quit wmfocus instead of every key (thanks @Rephobia)
