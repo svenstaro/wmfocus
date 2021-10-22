@@ -43,7 +43,7 @@ wmfocus will make use of a compositor to get real transparency.
 
 ## Full help
 ```
-wmfocus 1.2.1-alpha.0
+wmfocus 1.3.0
 
 Sven-Hendrik Haase <svenstaro@gmail.com>
 

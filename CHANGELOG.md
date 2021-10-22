@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [1.3.0] - 2021-10-22
 - Highlight currently selected window (also adds `--textcolorcurrent`, `--textcolorcurrentalt`, `--bgcolorcurrent`) [#82](https://github.com/svenstaro/wmfocus/issues/82)
 
 ## [1.2.0] - 2021-07-11
@@ -36,7 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update to Rust 2018 edition
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/wmfocus/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/svenstaro/wmfocus/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/svenstaro/wmfocus/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/svenstaro/wmfocus/compare/v1.1.5...v1.2.0
 [1.1.5]: https://github.com/svenstaro/wmfocus/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/svenstaro/wmfocus/compare/1.1.3...v1.1.4
