@@ -1,28 +1,23 @@
 use anyhow::{Context, Result};
+use clap::{ArgEnum, Parser};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use log::{info, warn};
-use structopt::clap::arg_enum;
-use structopt::StructOpt;
 
 use crate::utils;
 
-arg_enum! {
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum HorizontalAlign {
-        Left,
-        Center,
-        Right,
-    }
+#[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum HorizontalAlign {
+    Left,
+    Center,
+    Right,
 }
 
-arg_enum! {
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum VerticalAlign {
-        Top,
-        Center,
-        Bottom,
-}
+#[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum VerticalAlign {
+    Top,
+    Center,
+    Bottom,
 }
 
 /// Load a system font.
@@ -114,77 +109,84 @@ fn parse_exit_keys(s: &str) -> utils::Sequence {
     utils::Sequence::new(Some(s))
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(
-    name = "wmfocus",
-    author,
-    about,
-    global_settings = &[structopt::clap::AppSettings::ColoredHelp],
-)]
+#[derive(Parser, Debug)]
+#[clap(name = "wmfocus", author, about, version)]
 pub struct AppConfig {
     /// Use a specific TrueType font with this format: family:size
-    #[structopt(short, long, default_value = "Mono:72", parse(try_from_str = parse_truetype_font))]
+    #[clap(short, long, default_value = "Mono:72", parse(try_from_str = parse_truetype_font))]
     pub font: FontConfig,
 
     /// Define a set of possbile values to use as hint characters
-    #[structopt(short = "c", long = "chars", default_value = "sadfjklewcmpgh")]
+    #[clap(short = 'c', long = "chars", default_value = "sadfjklewcmpgh")]
     pub hint_chars: String,
 
     /// Add an additional margin around the text box (value is a factor of the box size)
-    #[structopt(short, long, default_value = "0.2")]
+    #[clap(short, long, default_value = "0.2")]
     pub margin: f32,
 
     /// Text color (CSS notation)
-    #[structopt(long = "textcolor", display_order = 49, default_value = "#dddddd", parse(try_from_str = parse_color))]
+    #[clap(long = "textcolor", display_order = 49, default_value = "#dddddd", parse(try_from_str = parse_color))]
     pub text_color: (f64, f64, f64, f64),
 
     /// Text color alternate (CSS notation)
-    #[structopt(long = "textcoloralt", display_order = 50, default_value = "#666666", parse(try_from_str = parse_color))]
+    #[clap(long = "textcoloralt", display_order = 50, default_value = "#666666", parse(try_from_str = parse_color))]
     pub text_color_alt: (f64, f64, f64, f64),
 
     /// Background color (CSS notation)
-    #[structopt(long = "bgcolor", display_order = 51, default_value = "rgba(30, 30, 30, 0.9)", parse(try_from_str = parse_color))]
+    #[clap(long = "bgcolor", display_order = 51, default_value = "rgba(30, 30, 30, 0.9)", parse(try_from_str = parse_color))]
     pub bg_color: (f64, f64, f64, f64),
 
     /// Text color current window (CSS notation)
-    #[structopt(long = "textcolorcurrent", display_order = 52, default_value = "#333333", parse(try_from_str = parse_color))]
+    #[clap(long = "textcolorcurrent", display_order = 52, default_value = "#333333", parse(try_from_str = parse_color))]
     pub text_color_current: (f64, f64, f64, f64),
 
     /// Text color current window alternate (CSS notation)
-    #[structopt(long = "textcolorcurrentalt", display_order = 53, default_value = "#999999", parse(try_from_str = parse_color))]
+    #[clap(long = "textcolorcurrentalt", display_order = 53, default_value = "#999999", parse(try_from_str = parse_color))]
     pub text_color_current_alt: (f64, f64, f64, f64),
 
     /// Background color current window (CSS notation)
-    #[structopt(long = "bgcolorcurrent", display_order = 54, default_value = "rgba(200, 200, 200, 0.9)", parse(try_from_str = parse_color))]
+    #[clap(long = "bgcolorcurrent", display_order = 54, default_value = "rgba(200, 200, 200, 0.9)", parse(try_from_str = parse_color))]
     pub bg_color_current: (f64, f64, f64, f64),
 
     /// Horizontal alignment of the box inside the window
-    #[structopt(long = "halign", display_order = 100, default_value = "left", possible_values = &HorizontalAlign::variants(), case_insensitive = true)]
+    #[clap(
+        long = "halign",
+        display_order = 100,
+        default_value = "left",
+        case_insensitive = true,
+        arg_enum
+    )]
     pub horizontal_align: HorizontalAlign,
 
     /// Vertical alignment of the box inside the window
-    #[structopt(long = "valign", display_order = 101, default_value = "top", possible_values = &VerticalAlign::variants(), case_insensitive = true)]
+    #[clap(
+        long = "valign",
+        display_order = 101,
+        default_value = "top",
+        case_insensitive = true,
+        arg_enum
+    )]
     pub vertical_align: VerticalAlign,
 
     /// Completely fill out windows
-    #[structopt(long, display_order = 102, conflicts_with_all(&["horizontal_align", "vertical_align", "margin", "offset"]))]
+    #[clap(long, display_order = 102, conflicts_with_all(&["horizontal-align", "vertical-align", "margin", "offset"]))]
     pub fill: bool,
 
     /// Print the window id only but don't change focus
-    #[structopt(short, long)]
+    #[clap(short, long)]
     pub print_only: bool,
 
     /// Offset box from edge of window relative to alignment (x,y)
-    #[structopt(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
+    #[clap(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
 
     /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
-    #[structopt(short, long, parse(from_str = parse_exit_keys))]
+    #[clap(short, long, parse(from_str = parse_exit_keys))]
     pub exit_keys: Vec<utils::Sequence>,
 }
 
 pub fn parse_args() -> AppConfig {
-    let mut config = AppConfig::from_args();
+    let mut config = AppConfig::parse();
     if config.fill {
         config.horizontal_align = HorizontalAlign::Center;
         config.vertical_align = VerticalAlign::Center;

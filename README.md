@@ -43,35 +43,34 @@ wmfocus will make use of a compositor to get real transparency.
 
 ## Full help
 ```
-wmfocus 1.2.0
+wmfocus 1.2.1-alpha.0
+
 Sven-Hendrik Haase <svenstaro@gmail.com>
 
+Visually focus windows by label
 
 USAGE:
-    wmfocus [FLAGS] [OPTIONS]
-
-FLAGS:
-        --fill         Completely fill out windows
-    -h, --help         Prints help information
-    -p, --printonly    Print the window id only but don't change focus
-    -V, --version      Prints version information
+    wmfocus [OPTIONS]
 
 OPTIONS:
-        --textcolor <text_color>           Text color (CSS notation) [default: #dddddd]
-        --textcoloralt <text_color_alt>    Text color alternate (CSS notation) [default: #666666]
-        --bgcolor <bg_color>               Background color (CSS notation) [default: rgba(30, 30, 30, 0.9)]
-        --halign <horizontal_align>        Horizontal alignment of the box inside the window [default: left]  [possible
-                                           values: left, center, right]
-        --valign <vertical_align>          Vertical alignment of the box inside the window [default: top]  [possible
-                                           values: top, center, bottom]
-    -e, --exit-keys <exit-keys>...         List of keys to exit application, sequence separator is space, key separator
-                                           is '+', eg Control_L+g Shift_L+f
-    -f, --font <font>                      Use a specific TrueType font with this format: family:size [default: Mono:72]
-    -c, --chars <hint_chars>               Define a set of possbile values to use as hint characters [default:
-                                           sadfjklewcmpgh]
-    -m, --margin <margin>                  Add an additional margin around the text box (value is a factor of the box
-                                           size) [default: 0.2]
-    -o, --offset <offset>                  Offset box from edge of window (x,y) [default: 0,0]
+        --textcolor <TEXT_COLOR>                          Text color (CSS notation) [default: #dddddd]
+        --textcoloralt <TEXT_COLOR_ALT>                   Text color alternate (CSS notation) [default: #666666]
+        --bgcolor <BG_COLOR>                              Background color (CSS notation) [default: "rgba(30, 30, 30, 0.9)"]
+        --textcolorcurrent <TEXT_COLOR_CURRENT>           Text color current window (CSS notation) [default: #333333]
+        --textcolorcurrentalt <TEXT_COLOR_CURRENT_ALT>    Text color current window alternate (CSS notation) [default: #999999]
+        --bgcolorcurrent <BG_COLOR_CURRENT>               Background color current window (CSS notation) [default: "rgba(200, 200, 200, 0.9)"]
+        --halign <HORIZONTAL_ALIGN>                       Horizontal alignment of the box inside the window [default: left] [possible values: left, center, right]
+        --valign <VERTICAL_ALIGN>                         Vertical alignment of the box inside the window [default: top] [possible values: top, center, bottom]
+        --fill                                            Completely fill out windows
+    -c, --chars <HINT_CHARS>                              Define a set of possbile values to use as hint characters [default: sadfjklewcmpgh]
+    -e, --exit-keys <EXIT_KEYS>...                        List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g
+                                                          Shift_L+f
+    -f, --font <FONT>                                     Use a specific TrueType font with this format: family:size [default: Mono:72]
+    -h, --help                                            Print help information
+    -m, --margin <MARGIN>                                 Add an additional margin around the text box (value is a factor of the box size) [default: 0.2]
+    -o, --offset <OFFSET>                                 Offset box from edge of window relative to alignment (x,y) [default: 0,0]
+    -p, --print-only                                      Print the window id only but don't change focus
+    -V, --version                                         Print version information
 ```
 
 ## Troubleshooting
