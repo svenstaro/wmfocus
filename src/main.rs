@@ -23,6 +23,7 @@ pub struct DesktopWindow {
     x_window_id: Option<i32>,
     pos: (i32, i32),
     size: (i32, i32),
+    is_focused: bool,
 }
 
 #[derive(Debug)]
@@ -63,6 +64,7 @@ fn main() -> Result<()> {
         (xcb::CW_OVERRIDE_REDIRECT, 1),
     ];
 
+    // Assemble RenderWindows from DesktopWindows.
     let mut render_windows = HashMap::new();
     for desktop_window in &desktop_windows {
         // We need to estimate the font size before rendering because we want the window to only be

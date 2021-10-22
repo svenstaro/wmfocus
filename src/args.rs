@@ -146,6 +146,18 @@ pub struct AppConfig {
     #[structopt(long = "bgcolor", display_order = 51, default_value = "rgba(30, 30, 30, 0.9)", parse(try_from_str = parse_color))]
     pub bg_color: (f64, f64, f64, f64),
 
+    /// Text color current window (CSS notation)
+    #[structopt(long = "textcolorcurrent", display_order = 52, default_value = "#333333", parse(try_from_str = parse_color))]
+    pub text_color_current: (f64, f64, f64, f64),
+
+    /// Text color current window alternate (CSS notation)
+    #[structopt(long = "textcolorcurrentalt", display_order = 53, default_value = "#999999", parse(try_from_str = parse_color))]
+    pub text_color_current_alt: (f64, f64, f64, f64),
+
+    /// Background color current window (CSS notation)
+    #[structopt(long = "bgcolorcurrent", display_order = 54, default_value = "rgba(200, 200, 200, 0.9)", parse(try_from_str = parse_color))]
+    pub bg_color_current: (f64, f64, f64, f64),
+
     /// Horizontal alignment of the box inside the window
     #[structopt(long = "halign", display_order = 100, default_value = "left", possible_values = &HorizontalAlign::variants(), case_insensitive = true)]
     pub horizontal_align: HorizontalAlign,

@@ -77,11 +77,20 @@ pub fn draw_hint_text(
 ) -> Result<()> {
     // Paint background.
     rw.cairo_context.set_operator(cairo::Operator::Source);
-    rw.cairo_context.set_source_rgb(
-        app_config.bg_color.0,
-        app_config.bg_color.1,
-        app_config.bg_color.2,
-    );
+
+    if rw.desktop_window.is_focused {
+        rw.cairo_context.set_source_rgb(
+            app_config.bg_color_current.0,
+            app_config.bg_color_current.1,
+            app_config.bg_color_current.2,
+        );
+    } else {
+        rw.cairo_context.set_source_rgb(
+            app_config.bg_color.0,
+            app_config.bg_color.1,
+            app_config.bg_color.2,
+        );
+    }
     rw.cairo_context.paint().context("Error trying to draw")?;
     rw.cairo_context.set_operator(cairo::Operator::Over);
 
@@ -94,12 +103,21 @@ pub fn draw_hint_text(
     rw.cairo_context.move_to(rw.draw_pos.0, rw.draw_pos.1);
     if text.starts_with(current_hints) {
         // Paint already selected chars.
-        rw.cairo_context.set_source_rgba(
-            app_config.text_color_alt.0,
-            app_config.text_color_alt.1,
-            app_config.text_color_alt.2,
-            app_config.text_color_alt.3,
-        );
+        if rw.desktop_window.is_focused {
+            rw.cairo_context.set_source_rgba(
+                app_config.text_color_current_alt.0,
+                app_config.text_color_current_alt.1,
+                app_config.text_color_current_alt.2,
+                app_config.text_color_current_alt.3,
+            );
+        } else {
+            rw.cairo_context.set_source_rgba(
+                app_config.text_color_alt.0,
+                app_config.text_color_alt.1,
+                app_config.text_color_alt.2,
+                app_config.text_color_alt.3,
+            );
+        }
         for c in current_hints.chars() {
             rw.cairo_context
                 .show_text(&c.to_string())
@@ -108,12 +126,21 @@ pub fn draw_hint_text(
     }
 
     // Paint unselected chars.
-    rw.cairo_context.set_source_rgba(
-        app_config.text_color.0,
-        app_config.text_color.1,
-        app_config.text_color.2,
-        app_config.text_color.3,
-    );
+    if rw.desktop_window.is_focused {
+        rw.cairo_context.set_source_rgba(
+            app_config.text_color_current.0,
+            app_config.text_color_current.1,
+            app_config.text_color_current.2,
+            app_config.text_color_current.3,
+        );
+    } else {
+        rw.cairo_context.set_source_rgba(
+            app_config.text_color.0,
+            app_config.text_color.1,
+            app_config.text_color.2,
+            app_config.text_color.3,
+        );
+    }
     let re = Regex::new(&format!("^{}", current_hints)).unwrap();
     for c in re.replace(text, "").chars() {
         rw.cairo_context
