@@ -27,7 +27,7 @@ log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1.5"
 structopt = "0.3"
-xcb = "0.9"
+xcb = "0.10"
 xkbcommon = "0.4"
 anyhow = "1"
 
@@ -36,7 +36,7 @@ version = "0.14"
 features = ["xcb"]
 
 [dependencies.xcb-util]
-version = "0.3"
+version = "0.4"
 features = ["keysyms"]
 
 [dependencies.x11]
