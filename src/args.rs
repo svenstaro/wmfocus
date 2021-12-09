@@ -153,7 +153,7 @@ pub struct AppConfig {
         long = "halign",
         display_order = 100,
         default_value = "left",
-        case_insensitive = true,
+        ignore_case = true,
         arg_enum
     )]
     pub horizontal_align: HorizontalAlign,
@@ -163,7 +163,7 @@ pub struct AppConfig {
         long = "valign",
         display_order = 101,
         default_value = "top",
-        case_insensitive = true,
+        ignore_case = true,
         arg_enum
     )]
     pub vertical_align: VerticalAlign,
