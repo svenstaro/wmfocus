@@ -32,7 +32,7 @@ xkbcommon = "0.4"
 anyhow = "1"
 
 [dependencies.cairo-rs]
-version = "0.14"
+version = "0.15"
 features = ["xcb"]
 
 [dependencies.xcb-util]
