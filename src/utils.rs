@@ -297,7 +297,7 @@ impl Sequence {
     }
 
     /// Sort vector alphabetically
-    fn sort(vec: &mut Vec<String>) {
+    fn sort(vec: &mut [String]) {
         vec.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     }
 
