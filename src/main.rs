@@ -8,6 +8,8 @@ use xkbcommon::xkb;
 mod args;
 mod utils;
 
+// begin i3-specific
+
 #[cfg(feature = "i3")]
 extern crate i3ipc;
 
@@ -17,10 +19,25 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use crate::wm_i3 as wm;
 
+// end i3-specific
+
+// begin sway-specific
+
+#[cfg(feature = "sway")]
+extern crate swayipc;
+
+#[cfg(feature = "sway")]
+mod wm_sway;
+
+#[cfg(feature = "sway")]
+use crate::wm_sway as wm;
+
+// end sway-specific
+
 #[derive(Debug)]
 pub struct DesktopWindow {
     id: i64,
-    x_window_id: Option<i32>,
+    x_window_id: Option<i64>,
     pos: (i32, i32),
     size: (i32, i32),
     is_focused: bool,
@@ -34,7 +51,7 @@ pub struct RenderWindow<'a> {
     rect: (i32, i32, i32, i32),
 }
 
-#[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
+#[cfg(any(feature = "i3", feature = "sway"))]
 fn main() -> Result<()> {
     pretty_env_logger::init();
     let app_config = args::parse_args();
@@ -325,12 +342,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(any(feature = "i3", feature = "add_some_other_wm_here")))]
+#[cfg(not(any(feature = "i3", feature = "sway")))]
 fn main() -> Result<()> {
     eprintln!(
-        "You need to enable support for at least one window manager.\n
+        "You need to enable support for one window manager.\n
 Currently supported:
-    --features i3"
+    --features i3
+    --features sway"
     );
 
     Ok(())
