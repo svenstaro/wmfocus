@@ -3,7 +3,7 @@ use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::time::Duration;
-use xkbcommon::xkb;
+use xcb::x;
 
 mod args;
 mod utils;
@@ -52,16 +52,15 @@ fn main() -> Result<()> {
         .nth(screen_num as usize)
         .context("Couldn't get screen")?;
 
-    let values = [
-        (xcb::CW_BACK_PIXEL, screen.black_pixel()),
-        (
-            xcb::CW_EVENT_MASK,
-            xcb::EVENT_MASK_EXPOSURE
-                | xcb::EVENT_MASK_KEY_PRESS
-                | xcb::EVENT_MASK_BUTTON_PRESS
-                | xcb::EVENT_MASK_BUTTON_RELEASE,
-        ),
-        (xcb::CW_OVERRIDE_REDIRECT, 1),
+    let value_list = &[
+        (x::Cw::BackPixel(screen.black_pixel())),
+        (x::Cw::OverrideRedirect(true)),
+        (x::Cw::EventMask(
+            x::EventMask::EXPOSURE
+                | x::EventMask::KEY_PRESS
+                | x::EventMask::BUTTON_PRESS
+                | x::EventMask::BUTTON_RELEASE,
+        )),
     ];
 
     // Assemble RenderWindows from DesktopWindows.
@@ -151,43 +150,46 @@ fn main() -> Result<()> {
             );
         }
 
-        let xcb_window_id = conn.generate_id();
+        let window: x::Window = conn.generate_id();
 
         // Create the actual window.
-        xcb::create_window(
-            &conn,
-            xcb::COPY_FROM_PARENT as u8,
-            xcb_window_id,
-            screen.root(),
+        let create_window_cookie = conn.send_request_checked(&x::CreateWindow {
+            depth: x::COPY_FROM_PARENT as u8,
+            wid: window,
+            parent: screen.root(),
             x,
             y,
             width,
             height,
-            0,
-            xcb::WINDOW_CLASS_INPUT_OUTPUT as u16,
-            screen.root_visual(),
-            &values,
-        );
+            border_width: 0,
+            class: x::WindowClass::InputOutput,
+            visual: screen.root_visual(),
+            value_list,
+        });
+        conn.check_request(create_window_cookie)?;
 
-        xcb::map_window(&conn, xcb_window_id);
+        let map_window_cookie = conn.send_request_checked(&x::MapWindow { window });
+        conn.check_request(map_window_cookie)?;
 
         // Set transparency.
-        let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
-            .get_reply()
+        let opacity_cookie = conn.send_request(&x::InternAtom {
+            only_if_exists: false,
+            name: b"_NET_WM_WINDOW_OPACITY",
+        });
+        let opacity_atom = conn
+            .wait_for_reply(opacity_cookie)
             .context("Couldn't create atom _NET_WM_WINDOW_OPACITY")?
             .atom();
-        let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u64;
-        xcb::change_property(
-            &conn,
-            xcb::PROP_MODE_REPLACE as u8,
-            xcb_window_id,
-            opacity_atom,
-            xcb::ATOM_CARDINAL,
-            32,
-            &[opacity],
-        );
+        let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u32;
+        conn.send_request(&x::ChangeProperty {
+            mode: x::PropMode::Replace,
+            window,
+            property: opacity_atom,
+            r#type: x::ATOM_CARDINAL,
+            data: &[opacity],
+        });
 
-        conn.flush();
+        conn.flush()?;
 
         let mut visual =
             utils::find_visual(&conn, screen.root_visual()).context("Couldn't find visual")?;
@@ -196,10 +198,14 @@ fn main() -> Result<()> {
                 conn.get_raw_conn() as *mut cairo_sys::xcb_connection_t
             )
         };
-        let cairo_xcb_drawable = cairo::XCBDrawable(xcb_window_id);
-        let raw_visualtype = &mut visual.base as *mut xcb::ffi::xcb_visualtype_t;
+        let cairo_xcb_drawable = cairo::XCBDrawable(window.resource_id());
         let cairo_xcb_visual = unsafe {
-            cairo::XCBVisualType::from_raw_none(raw_visualtype as *mut cairo_sys::xcb_visualtype_t)
+            // Lil' dragon den right here, beware.
+            let raw_visualtype = std::mem::transmute::<
+                &mut x::Visualtype,
+                *mut cairo_sys::xcb_visualtype_t,
+            >(&mut visual);
+            cairo::XCBVisualType::from_raw_none(raw_visualtype)
         };
         let surface = cairo::XCBSurface::create(
             &cairo_xcb_conn,
@@ -231,6 +237,9 @@ fn main() -> Result<()> {
     // Since we might have lots of windows on the desktop, it might be required
     // to enter a sequence in order to get to the correct window.
     // We'll have to track the keys pressed so far.
+
+    use x11::{keysym, xlib::KeySym};
+    use xcb::{Raw, Xid};
     let mut pressed_keys = String::default();
     let mut sequence = utils::Sequence::new(None);
 
@@ -238,31 +247,32 @@ fn main() -> Result<()> {
     while !closed {
         let event = conn.wait_for_event();
         match event {
-            None => {
+            Err(_) => {
                 closed = true;
             }
-            Some(event) => {
-                let r = event.response_type();
-                match r {
-                    xcb::EXPOSE => {
+            Ok(event) => {
+                match event {
+                    xcb::Event::X(x::Event::Expose(_)) => {
                         for (hint, rw) in &render_windows {
                             utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
                                 .context("Couldn't draw hint text")?;
-                            conn.flush();
+                            conn.flush()?;
                         }
                     }
-                    xcb::BUTTON_PRESS => {
+                    xcb::Event::X(x::Event::ButtonPress(_)) => {
                         closed = true;
                     }
-                    xcb::KEY_RELEASE => {
-                        let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym)
+                    xcb::Event::X(x::Event::KeyRelease(key_release_event)) => {
+                        let keysym = utils::keycode_to_keysym(&conn, key_release_event.detail());
+                        dbg!(&keysym);
+                        let kstr = utils::keysym_to_string(keysym)
                             .context("Couldn't convert ksym to string")?;
                         sequence.remove(kstr);
                     }
-                    xcb::KEY_PRESS => {
-                        let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym)
+                    xcb::Event::X(x::Event::KeyPress(key_press_event)) => {
+                        let keysym = utils::keycode_to_keysym(&conn, key_press_event.detail());
+                        dbg!(&keysym);
+                        let kstr = utils::keysym_to_string(keysym)
                             .context("Couldn't convert ksym to string")?;
 
                         sequence.push(kstr.to_owned());
@@ -276,7 +286,9 @@ fn main() -> Result<()> {
 
                         info!("Current key sequence: '{}'", pressed_keys);
 
-                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&sequence) {
+                        if keysym == keysym::XK_Escape as KeySym
+                            || app_config.exit_keys.contains(&sequence)
+                        {
                             info!("{:?} is exit sequence", sequence);
                             closed = true;
                             continue;
@@ -307,7 +319,7 @@ fn main() -> Result<()> {
                             for (hint, rw) in &render_windows {
                                 utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
                                     .context("Couldn't draw hint text")?;
-                                conn.flush();
+                                conn.flush()?;
                             }
                             continue;
                         } else {
