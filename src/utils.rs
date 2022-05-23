@@ -271,7 +271,7 @@ pub fn convert_to_string<'a>(symbol: u32) -> Result<&'a str> {
 }
 
 /// Struct helps to write sequence and check if it is found in list of exit sequences
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Sequence {
     sequence: Vec<String>,
 }
