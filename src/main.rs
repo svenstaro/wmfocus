@@ -307,7 +307,7 @@ fn main() -> Result<()> {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                wm::send_command_to_window(rw.desktop_window, command)
+                                command.send_to_window(rw.desktop_window)
                                     .context("Couldn't focus window")?;
                             }
                             closed = true;

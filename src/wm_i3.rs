@@ -116,23 +116,24 @@ pub fn get_windows() -> Result<Vec<DesktopWindow>> {
 pub enum WindowCommand {
     Focus,
     Kill,
-    Float
+    Float,
 }
 
 impl WindowCommand {
-    fn i3_cmd(&self) -> &str {
+    /// Send this command to a window 
+    pub fn send_to_window(&self, window: &DesktopWindow) -> Result<()> {
         match self {
-            WindowCommand::Focus => "focus",
-            WindowCommand::Kill => "kill",
-            WindowCommand::Float => "floating toggle",
+            WindowCommand::Focus => send_command_string(window, "focus"),
+            WindowCommand::Kill => send_command_string(window, "kill"),
+            WindowCommand::Float => send_command_string(window, "floating toggle"),
         }
     }
 }
 
-/// Send a command to a window based on the given ``WindowCommand``.
-pub fn send_command_to_window(window: &DesktopWindow, command: &WindowCommand) -> Result<()> {
+/// Send the given string as an i3 command to the given window.
+fn send_command_string(window: &DesktopWindow, command_str: &str) -> Result<()> {
     let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
-    let command_str = format!("[con_id=\"{}\"] {}", window.id, command.i3_cmd());
+    let command_str = format!("[con_id=\"{}\"] {}", window.id, command_str);
     let command = connection
         .run_command(&command_str)
         .context("Couldn't communicate with i3")?;
