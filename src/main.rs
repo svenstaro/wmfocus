@@ -64,6 +64,12 @@ fn main() -> Result<()> {
         (xcb::CW_OVERRIDE_REDIRECT, 1),
     ];
 
+    // TODO: Move the ``command_options`` into the configuration
+    let mut command = &wm::WindowCommand::Focus;
+    let mut command_options = HashMap::new();
+    command_options.insert("x", wm::WindowCommand::Kill);
+    command_options.insert("f", wm::WindowCommand::Float);
+
     // Assemble RenderWindows from DesktopWindows.
     let mut render_windows = HashMap::new();
     for desktop_window in &desktop_windows {
@@ -265,14 +271,18 @@ fn main() -> Result<()> {
                         let kstr = utils::convert_to_string(ksym)
                             .context("Couldn't convert ksym to string")?;
 
-                        sequence.push(kstr.to_owned());
-
                         if app_config.hint_chars.contains(kstr) {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
+                        } else if command_options.contains_key(kstr) {
+                            command = command_options.get(kstr).unwrap();
+                            info!("Changing command mode to '{command:?}'");
+                            continue;
                         } else {
                             warn!("Pressed key '{}' is not a valid hint characters", kstr);
                         }
+
+                        sequence.push(kstr.to_owned());
 
                         info!("Current key sequence: '{}'", pressed_keys);
 
@@ -297,7 +307,7 @@ fn main() -> Result<()> {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                wm::focus_window(rw.desktop_window)
+                                wm::send_command_to_window(rw.desktop_window, command)
                                     .context("Couldn't focus window")?;
                             }
                             closed = true;
