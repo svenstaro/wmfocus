@@ -67,10 +67,10 @@ fn main() -> Result<()> {
     ];
 
     // TODO: Move the ``window_cmd_map`` into the configuration
-    let mut command = &wm::WindowCommand::Focus;
+    let mut window_command = &wm::WindowCommand::Focus;
     let mut window_cmd_map = HashMap::new();
     window_cmd_map.insert("x", wm::WindowCommand::Kill);
-    window_cmd_map.insert("f", wm::WindowCommand::Float);
+    window_cmd_map.insert("q", wm::WindowCommand::Float);
 
     collision_check_window_commands(&window_cmd_map, &app_config.hint_chars)
         .context("Collision in command options and hint chars.")?;
@@ -280,8 +280,8 @@ fn main() -> Result<()> {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
                         } else if window_cmd_map.contains_key(kstr) {
-                            command = window_cmd_map.get(kstr).unwrap();
-                            info!("Changing command mode to '{command:?}'");
+                            window_command = window_cmd_map.get(kstr).unwrap();
+                            info!("Changing window_command to '{window_command:?}'");
                             continue;
                         } else {
                             warn!("Pressed key '{}' is not a valid hint characters", kstr);
@@ -312,8 +312,8 @@ fn main() -> Result<()> {
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
-                                command.send_to_window(rw.desktop_window)
-                                    .context("Couldn't focus window")?;
+                                window_command.send_to_window(rw.desktop_window)
+                                    .context("Couldn't send window command")?;
                             }
                             closed = true;
                         } else if !pressed_keys.is_empty()
