@@ -120,7 +120,6 @@ pub enum WindowCommand {
 }
 
 impl WindowCommand {
-    /// Send this command to a window 
     pub fn send_to_window(&self, window: &DesktopWindow) -> Result<()> {
         match self {
             WindowCommand::Focus => send_command_string(window, "focus"),
@@ -130,7 +129,7 @@ impl WindowCommand {
     }
 }
 
-/// Send the given string as an i3 command to the given window.
+/// Send the given string as an i3 command to the selected window.
 fn send_command_string(window: &DesktopWindow, command_str: &str) -> Result<()> {
     let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
     let command_str = format!("[con_id=\"{}\"] {}", window.id, command_str);

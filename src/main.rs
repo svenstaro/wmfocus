@@ -17,8 +17,7 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use crate::wm_i3 as wm;
 
-#[cfg(feature = "i3")]
-use crate::utils::sanitise_command_options;
+use crate::utils::collision_check_window_commands;
 
 #[derive(Debug)]
 pub struct DesktopWindow {
@@ -67,13 +66,13 @@ fn main() -> Result<()> {
         (xcb::CW_OVERRIDE_REDIRECT, 1),
     ];
 
-    // TODO: Move the ``command_options`` into the configuration
+    // TODO: Move the ``window_cmd_map`` into the configuration
     let mut command = &wm::WindowCommand::Focus;
-    let mut command_options = HashMap::new();
-    command_options.insert("x", wm::WindowCommand::Kill);
-    command_options.insert("f", wm::WindowCommand::Float);
+    let mut window_cmd_map = HashMap::new();
+    window_cmd_map.insert("x", wm::WindowCommand::Kill);
+    window_cmd_map.insert("f", wm::WindowCommand::Float);
 
-    sanitise_command_options(&command_options, &app_config.hint_chars)
+    collision_check_window_commands(&window_cmd_map, &app_config.hint_chars)
         .context("Collision in command options and hint chars.")?;
 
     // Assemble RenderWindows from DesktopWindows.
@@ -280,8 +279,8 @@ fn main() -> Result<()> {
                         if app_config.hint_chars.contains(kstr) {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
-                        } else if command_options.contains_key(kstr) {
-                            command = command_options.get(kstr).unwrap();
+                        } else if window_cmd_map.contains_key(kstr) {
+                            command = window_cmd_map.get(kstr).unwrap();
                             info!("Changing command mode to '{command:?}'");
                             continue;
                         } else {

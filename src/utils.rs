@@ -1,6 +1,6 @@
 use anyhow::{bail, Context, Result};
 use itertools::Itertools;
-use log::{debug, info};
+use log::debug;
 use regex::Regex;
 use std::collections::HashMap;
 use std::ffi::CStr;
@@ -11,9 +11,6 @@ use xcb::ffi::xcb_visualid_t;
 
 use crate::args::AppConfig;
 use crate::{DesktopWindow, RenderWindow};
-
-#[cfg(feature = "i3")]
-use crate::wm_i3::WindowCommand;
 
 /// Given a list of `current_hints` and a bunch of `hint_chars`, this finds a unique combination
 /// of characters that doesn't yet exist in `current_hints`. `max_count` is the maximum possible
@@ -71,13 +68,13 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> Result<cairo::Te
     cr.text_extents(text).context("Couldn't create TextExtents")
 }
 
-#[cfg(feature = "i3")]
-/// Check for an overlap between the command and hints
-pub fn sanitise_command_options(
-    command_options: &HashMap<&str, WindowCommand>,
+/// Return an error if there is a collision between the keys in the window function map and the hint
+/// chars
+pub fn collision_check_window_commands<T>(
+    window_cmd_map: &HashMap<&str, T>,
     hint_chars: &str,
 ) -> Result<()> {
-    let colliding_keys: String = command_options
+    let colliding_keys: String = window_cmd_map
         .keys()
         .copied()
         .filter(|k| hint_chars.contains(k.chars().next().unwrap()))
@@ -398,5 +395,29 @@ mod tests {
         sequence.remove("g");
 
         assert!(!sequence.is_started());
+    }
+
+    #[test]
+    fn test_collision_check_pass() {
+        let cmd_map = HashMap::from([
+            ("a", ()),
+            ("b", ())
+        ]);
+
+        let hint_chars = "cdef";
+        let collision = collision_check_window_commands(&cmd_map, &hint_chars);
+        assert!(collision.is_ok());
+    }
+
+    #[test]
+    fn test_collision_check_fail() {
+        let cmd_map = HashMap::from([
+            ("a", ()),
+            ("b", ())
+        ]);
+
+        let hint_chars = "adef";
+        let collision = collision_check_window_commands(&cmd_map, &hint_chars);
+        assert!(collision.is_err());
     }
 }
