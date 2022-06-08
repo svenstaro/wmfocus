@@ -1,7 +1,8 @@
 use anyhow::{bail, Context, Result};
 use itertools::Itertools;
-use log::debug;
+use log::{debug, info};
 use regex::Regex;
+use std::collections::HashMap;
 use std::ffi::CStr;
 use std::iter;
 use std::thread::sleep;
@@ -10,6 +11,9 @@ use xcb::ffi::xcb_visualid_t;
 
 use crate::args::AppConfig;
 use crate::{DesktopWindow, RenderWindow};
+
+#[cfg(feature = "i3")]
+use crate::wm_i3::WindowCommand;
 
 /// Given a list of `current_hints` and a bunch of `hint_chars`, this finds a unique combination
 /// of characters that doesn't yet exist in `current_hints`. `max_count` is the maximum possible
@@ -65,6 +69,25 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> Result<cairo::Te
     cr.select_font_face(family, cairo::FontSlant::Normal, cairo::FontWeight::Normal);
     cr.set_font_size(size);
     cr.text_extents(text).context("Couldn't create TextExtents")
+}
+
+#[cfg(feature = "i3")]
+/// Check for an overlap between the command and hints
+pub fn sanitise_command_options(
+    command_options: &HashMap<&str, WindowCommand>,
+    hint_chars: &str,
+) -> Result<()> {
+    let colliding_keys: String = command_options
+        .keys()
+        .copied()
+        .filter(|k| hint_chars.contains(k.chars().next().unwrap()))
+        .collect();
+
+    if colliding_keys.chars().count() > 0 {
+        bail!("Colliding window functions keys {colliding_keys:?}.");
+    } else {
+        return Ok(());
+    }
 }
 
 /// Draw a `text` onto `rw`. In case any `current_hints` are already typed, it will draw those in a

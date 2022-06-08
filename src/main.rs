@@ -17,6 +17,9 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use crate::wm_i3 as wm;
 
+#[cfg(feature = "i3")]
+use crate::utils::sanitise_command_options;
+
 #[derive(Debug)]
 pub struct DesktopWindow {
     id: i64,
@@ -69,6 +72,9 @@ fn main() -> Result<()> {
     let mut command_options = HashMap::new();
     command_options.insert("x", wm::WindowCommand::Kill);
     command_options.insert("f", wm::WindowCommand::Float);
+
+    sanitise_command_options(&command_options, &app_config.hint_chars)
+        .context("Collision in command options and hint chars.")?;
 
     // Assemble RenderWindows from DesktopWindows.
     let mut render_windows = HashMap::new();
