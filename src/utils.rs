@@ -449,7 +449,7 @@ mod tests {
 
         let key_string = "adef";
         let result_test = strip_command_keys(key_string, &cmd_map);
-        let result_expected = Some("def");
+        let result_expected = "def";
         assert_eq!(result_test, result_expected);
     }
 
@@ -459,7 +459,7 @@ mod tests {
 
         let key_string = "adef";
         let result_test = strip_command_keys(key_string, &cmd_map);
-        let result_expected = Some("adef");
+        let result_expected = "adef";
         assert_eq!(result_test, result_expected);
     }
 
@@ -467,9 +467,9 @@ mod tests {
     fn test_command_char_strip_too_short() {
         let cmd_map = HashMap::from([('c', ()), ('b', ())]);
 
-        let key_string = "q";
+        let key_string = "";
         let result_test = strip_command_keys(key_string, &cmd_map);
-        let result_expected = None;
+        let result_expected = "";
         assert_eq!(result_test, result_expected);
     }
 }
