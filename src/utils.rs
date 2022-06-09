@@ -69,7 +69,7 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> Result<cairo::Te
 }
 
 /// Return an error if there is a collision between the keys in the window function map and the hint
-/// chars
+/// chars.
 pub fn collision_check_window_commands<T>(
     window_cmd_map: &HashMap<&str, T>,
     hint_chars: &str,
