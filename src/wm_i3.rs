@@ -119,6 +119,13 @@ pub enum WindowCommand {
     Float,
 }
 
+impl Default for &WindowCommand {
+    fn default() -> Self {
+        return &WindowCommand::Focus
+    }
+}
+
+
 impl WindowCommand {
     pub fn send_to_window(&self, window: &DesktopWindow) -> Result<()> {
         match self {

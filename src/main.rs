@@ -1,8 +1,8 @@
-use anyhow::{Context, Result};
-use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::time::Duration;
+use anyhow::{Context, Result};
+use log::{debug, info, warn};
 use xkbcommon::xkb;
 
 mod args;
@@ -17,7 +17,7 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use crate::wm_i3 as wm;
 
-use crate::utils::collision_check_window_commands;
+use crate::utils::{collision_check_window_commands, get_window_command};
 
 #[derive(Debug)]
 pub struct DesktopWindow {
@@ -67,10 +67,10 @@ fn main() -> Result<()> {
     ];
 
     // TODO: Move the ``window_cmd_map`` into the configuration
-    let mut window_command = &wm::WindowCommand::Focus;
-    let mut window_cmd_map = HashMap::new();
-    window_cmd_map.insert("x", wm::WindowCommand::Kill);
-    window_cmd_map.insert("q", wm::WindowCommand::Float);
+    let window_cmd_map = HashMap::from([
+        ('x', wm::WindowCommand::Kill),
+        ('q', wm::WindowCommand::Float)
+    ]);
 
     collision_check_window_commands(&window_cmd_map, &app_config.hint_chars)
         .context("Collision in command options and hint chars.")?;
@@ -279,10 +279,12 @@ fn main() -> Result<()> {
                         if app_config.hint_chars.contains(kstr) {
                             info!("Adding '{}' to key sequence", kstr);
                             pressed_keys.push_str(kstr);
-                        } else if window_cmd_map.contains_key(kstr) {
-                            window_command = window_cmd_map.get(kstr).unwrap();
-                            info!("Changing window_command to '{window_command:?}'");
-                            continue;
+                        } else if window_cmd_map.contains_key(&kstr.chars().next().unwrap()) {
+                            if pressed_keys.chars().count() == 0 {
+                                pressed_keys.push_str(kstr)
+                            } else {
+                                warn!("Window command key '{}' must come first in the sequence", kstr);
+                            }
                         } else {
                             warn!("Pressed key '{}' is not a valid hint characters", kstr);
                         }
@@ -305,26 +307,30 @@ fn main() -> Result<()> {
                         // is not then we will also just exit and focus no new window.
                         // If there still is a chance we might find a window then we'll just
                         // keep going for now.
+                        let stripped_pressed_keys = utils::strip_command_keys(&pressed_keys, &window_cmd_map);
                         if sequence.is_started() {
                             utils::remove_last_key(&mut pressed_keys, kstr);
-                        } else if let Some(rw) = &render_windows.get(&pressed_keys) {
+                        } else if let Some(rw) = &render_windows.get(stripped_pressed_keys) {
                             info!("Found matching window, focusing");
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
+                                let window_command = get_window_command(&pressed_keys, &window_cmd_map);
                                 window_command.send_to_window(rw.desktop_window)
                                     .context("Couldn't send window command")?;
                             }
                             closed = true;
                         } else if !pressed_keys.is_empty()
-                            && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
+                            && render_windows.keys().any(|k| k.starts_with(&stripped_pressed_keys))
                         {
                             for (hint, rw) in &render_windows {
-                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
+                                utils::draw_hint_text(rw, &app_config, hint, &stripped_pressed_keys)
                                     .context("Couldn't draw hint text")?;
                                 conn.flush();
                             }
                             continue;
+                        } else if stripped_pressed_keys.is_empty() {
+                            info!("Command keys only sequence");
                         } else {
                             warn!("No more matches possible with current key sequence");
                             closed = app_config.exit_keys.is_empty();

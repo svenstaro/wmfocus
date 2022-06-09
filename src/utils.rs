@@ -71,19 +71,47 @@ pub fn extents_for_text(text: &str, family: &str, size: f64) -> Result<cairo::Te
 /// Return an error if there is a collision between the keys in the window function map and the hint
 /// chars.
 pub fn collision_check_window_commands<T>(
-    window_cmd_map: &HashMap<&str, T>,
+    window_cmd_map: &HashMap<char, T>,
     hint_chars: &str,
 ) -> Result<()> {
     let colliding_keys: String = window_cmd_map
         .keys()
         .copied()
-        .filter(|k| hint_chars.contains(k.chars().next().unwrap()))
+        .filter(|k| hint_chars.contains(*k))
         .collect();
 
     if colliding_keys.chars().count() > 0 {
         bail!("Colliding window functions keys {colliding_keys:?}.");
     } else {
         return Ok(());
+    }
+}
+
+/// Get the selected window command if the first key in the sequence is part of the
+/// ``window_cmd_map``, otherwise return the default command.
+pub fn get_window_command<'a, T>(pressed_keys: &str, window_cmd_map: &'a HashMap<char, T>) -> &'a T
+where
+    &'a T: Default,
+{
+    // This shouldn't be called with an empty ``pressed_keys``, but to be safe.
+    if pressed_keys.is_empty() {return <&T>::default();}
+
+    let first_char = &pressed_keys.chars().next().unwrap();
+    window_cmd_map.get(first_char).unwrap_or_default()
+}
+
+/// Remove a command key from the start of the pressed keys, if they are present.
+pub fn strip_command_keys<'a, T>(
+    pressed_keys: &'a str,
+    window_cmd_map: &HashMap<char, T>,
+) -> &'a str {
+    if pressed_keys.is_empty() {return ""}
+
+    let first_char = &pressed_keys.chars().next().unwrap(); 
+    if window_cmd_map.contains_key(first_char) {
+        return &pressed_keys[1..];
+    } else {
+        return &pressed_keys[..];
     }
 }
 
@@ -399,10 +427,7 @@ mod tests {
 
     #[test]
     fn test_collision_check_pass() {
-        let cmd_map = HashMap::from([
-            ("a", ()),
-            ("b", ())
-        ]);
+        let cmd_map = HashMap::from([('a', ()), ('b', ())]);
 
         let hint_chars = "cdef";
         let collision = collision_check_window_commands(&cmd_map, &hint_chars);
@@ -411,13 +436,40 @@ mod tests {
 
     #[test]
     fn test_collision_check_fail() {
-        let cmd_map = HashMap::from([
-            ("a", ()),
-            ("b", ())
-        ]);
+        let cmd_map = HashMap::from([('a', ()), ('b', ())]);
 
         let hint_chars = "adef";
         let collision = collision_check_window_commands(&cmd_map, &hint_chars);
         assert!(collision.is_err());
+    }
+
+    #[test]
+    fn test_command_char_strip() {
+        let cmd_map = HashMap::from([('a', ()), ('b', ())]);
+
+        let key_string = "adef";
+        let result_test = strip_command_keys(key_string, &cmd_map);
+        let result_expected = Some("def");
+        assert_eq!(result_test, result_expected);
+    }
+
+    #[test]
+    fn test_command_char_strip_nop() {
+        let cmd_map = HashMap::from([('c', ()), ('b', ())]);
+
+        let key_string = "adef";
+        let result_test = strip_command_keys(key_string, &cmd_map);
+        let result_expected = Some("adef");
+        assert_eq!(result_test, result_expected);
+    }
+
+    #[test]
+    fn test_command_char_strip_too_short() {
+        let cmd_map = HashMap::from([('c', ()), ('b', ())]);
+
+        let key_string = "q";
+        let result_test = strip_command_keys(key_string, &cmd_map);
+        let result_expected = None;
+        assert_eq!(result_test, result_expected);
     }
 }
