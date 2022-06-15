@@ -8,6 +8,8 @@ use xkbcommon::xkb;
 mod args;
 mod utils;
 
+use crate::utils::{collision_check_window_commands, get_window_command};
+
 #[cfg(feature = "i3")]
 extern crate i3ipc;
 
@@ -17,7 +19,6 @@ mod wm_i3;
 #[cfg(feature = "i3")]
 use crate::wm_i3 as wm;
 
-use crate::utils::{collision_check_window_commands, get_window_command};
 
 #[derive(Debug)]
 pub struct DesktopWindow {
@@ -66,11 +67,8 @@ fn main() -> Result<()> {
         (xcb::CW_OVERRIDE_REDIRECT, 1),
     ];
 
-    // TODO: Move the ``window_cmd_map`` into the configuration
-    let window_cmd_map = HashMap::from([
-        ('x', wm::WindowCommand::Kill),
-        ('q', wm::WindowCommand::Float)
-    ]);
+    let window_cmd_map = app_config.create_window_command_map();
+    println!("{window_cmd_map:?}");
 
     collision_check_window_commands(&window_cmd_map, &app_config.hint_chars)
         .context("Collision in command options and hint chars.")?;
@@ -311,11 +309,12 @@ fn main() -> Result<()> {
                         if sequence.is_started() {
                             utils::remove_last_key(&mut pressed_keys, kstr);
                         } else if let Some(rw) = &render_windows.get(stripped_pressed_keys) {
-                            info!("Found matching window, focusing");
+                            info!("Found matching window");
                             if app_config.print_only {
                                 println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
                             } else {
                                 let window_command = get_window_command(&pressed_keys, &window_cmd_map);
+                                info!("Selecting window command '{window_command:?}'");
                                 window_command.send_to_window(rw.desktop_window)
                                     .context("Couldn't send window command")?;
                             }

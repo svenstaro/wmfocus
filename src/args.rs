@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser};
 use css_color_parser::Color as CssColor;
@@ -5,6 +6,9 @@ use font_loader::system_fonts;
 use log::{info, warn};
 
 use crate::utils;
+
+#[cfg(feature = "i3")]
+use crate::wm_i3 as wm;
 
 #[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {
@@ -19,6 +23,7 @@ pub enum VerticalAlign {
     Center,
     Bottom,
 }
+
 
 /// Load a system font.
 fn load_font(font_family: &str) -> Result<Vec<u8>> {
@@ -180,9 +185,32 @@ pub struct AppConfig {
     #[clap(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
 
+    /// Prefix key to kill window
+    #[clap(short, long)]
+    kill_window_char: Option<char>,
+
+    /// Prefix key to toggle floating on the selected window
+    #[clap(long)]
+    float_window_char: Option<char>,
+
     /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
     #[clap(short, long, parse(from_str = parse_exit_keys))]
     pub exit_keys: Vec<utils::Sequence>,
+}
+
+#[cfg(feature="i3")]
+impl AppConfig {
+    pub fn create_window_command_map(&self) -> HashMap<char, wm::WindowCommand> {
+        let mut window_cmd_map = HashMap::new();
+
+        if let Some(kill_window_char) = self.kill_window_char {
+            window_cmd_map.insert(kill_window_char, wm::WindowCommand::Kill);
+        }
+        if let Some(float_window_char) = self.float_window_char {
+            window_cmd_map.insert(float_window_char, wm::WindowCommand::Float);
+        }
+        window_cmd_map
+    }
 }
 
 pub fn parse_args() -> AppConfig {
