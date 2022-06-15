@@ -185,7 +185,7 @@ pub struct AppConfig {
     #[clap(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
     pub offset: Offset,
 
-    /// Prefix key to kill window
+    /// Prefix key to kill the selected window
     #[clap(short, long)]
     kill_window_char: Option<char>,
 
