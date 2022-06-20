@@ -46,10 +46,10 @@ fn load_font(font_family: &str) -> Result<Vec<u8>> {
 /// Generate a valid `FontConfig` from `f`.
 /// `f` is expected to be in format `Mono:72`.
 fn parse_truetype_font(f: &str) -> Result<FontConfig> {
-    let v: Vec<_> = f.split(':').collect();
+    let mut v = f.split(':');
     let (family, size) = (
-        v.get(0).context("Wrong font format")?,
-        v.get(1).context("Wrong font format")?,
+        v.next().context("Wrong font format")?,
+        v.next().context("Wrong font format")?,
     );
 
     let loaded_font = load_font(family).context("Couldn't load font")?;
@@ -63,11 +63,11 @@ fn parse_truetype_font(f: &str) -> Result<FontConfig> {
 
 /// Validate coordinates and parse offset.
 fn parse_offset(c: &str) -> Result<Offset, String> {
-    let v: Vec<_> = c.split(',').collect();
+    let mut v = c.split(',');
     let (x, y) = (
-        v.get(0)
+        v.next()
             .ok_or("Wrong coordinate format, expected x,y coordinates")?,
-        v.get(1)
+        v.next()
             .ok_or("Wrong coordinate format, expected x,y coordinates")?,
     );
     let offset = Offset {
