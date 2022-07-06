@@ -797,7 +797,7 @@ dependencies = [
  "pretty_env_logger",
  "regex",
  "x11",
- "xcb",
+ "xcb 1.1.1",
  "xcb-util",
  "xkbcommon",
 ]
@@ -824,13 +824,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "xcb"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b127bf5bfe9dbb39118d6567e3773d4bbc795411a8e1ef7b7e056bccac0011a9"
+dependencies = [
+ "bitflags",
+ "libc",
+ "quick-xml",
+]
+
+[[package]]
 name = "xcb-util"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7c12d11589c9af0a90ca45e6177571be37d61c981c49c40e1bbd6c5867181e0"
 dependencies = [
  "libc",
- "xcb",
+ "xcb 0.10.1",
 ]
 
 [[package]]

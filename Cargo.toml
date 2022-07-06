@@ -27,7 +27,7 @@ log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1.6"
 clap = { version = "3.2", features = ["derive", "wrap_help"] }
-xcb = "0.10"
+xcb = "1.1"
 xkbcommon = "0.4"
 anyhow = "1"
 
