@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add extended window functions, including deleting and toggling floating windows, by giving prefix keys before the window sequence. [#179](https://github.com/svenstaro/wmfocus/issues/179)
 
 ## [1.3.0] - 2021-10-22
 - Highlight currently selected window (also adds `--textcolorcurrent`, `--textcolorcurrentalt`, `--bgcolorcurrent`) [#82](https://github.com/svenstaro/wmfocus/issues/82)

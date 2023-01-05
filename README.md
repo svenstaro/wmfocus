@@ -41,6 +41,19 @@ Change up the default colors:
 
 wmfocus will make use of a compositor to get real transparency.
 
+### Prefix commands
+
+Instead of focusing on the selected window, an alternate command can be sent instead. This is achieved by the use of a prefix key at the start of the sequence. To add `x` as a prefix key to kill a window:
+
+    wmfocus --kill-window-char x
+    
+then the sequence `a` will jump to the window `a` as normal, and the sequence `xa` will kill the window.
+
+Add a prefix key `t` to toggle floating on the selected window:
+
+    wmfocus --float-window-char t
+
+
 ## Full help
 ```
 wmfocus 1.3.0
@@ -66,7 +79,9 @@ OPTIONS:
     -e, --exit-keys <EXIT_KEYS>...                        List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g
                                                           Shift_L+f
     -f, --font <FONT>                                     Use a specific TrueType font with this format: family:size [default: Mono:72]
+        --float-window-char <FLOAT_WINDOW_CHAR>               Prefix key to toggle floating on the selected window
     -h, --help                                            Print help information
+    -k, --kill-window-char <KILL_WINDOW_CHAR>             Prefix key to kill the selected window
     -m, --margin <MARGIN>                                 Add an additional margin around the text box (value is a factor of the box size) [default: 0.2]
     -o, --offset <OFFSET>                                 Offset box from edge of window relative to alignment (x,y) [default: 0,0]
     -p, --print-only                                      Print the window id only but don't change focus
