@@ -141,7 +141,7 @@ pub fn draw_hint_text(
             app_config.text_color.3,
         );
     }
-    let re = Regex::new(&format!("^{}", current_hints)).unwrap();
+    let re = Regex::new(&format!("^{current_hints}")).unwrap();
     for c in re.replace(text, "").chars() {
         rw.cairo_context
             .show_text(&c.to_string())

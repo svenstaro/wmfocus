@@ -87,16 +87,16 @@ fn main() -> Result<()> {
             (
                 desktop_window.size.0 as u16,
                 desktop_window.size.1 as u16,
-                (f64::from(desktop_window.size.0) - text_extents.width) / 2.0,
-                (f64::from(desktop_window.size.1) - text_extents.height) / 2.0,
+                (f64::from(desktop_window.size.0) - text_extents.width()) / 2.0,
+                (f64::from(desktop_window.size.1) - text_extents.height()) / 2.0,
             )
         } else {
             let margin_factor = 1.0 + 0.2;
             (
-                (text_extents.width * margin_factor).round() as u16,
-                (text_extents.height * margin_factor).round() as u16,
-                ((text_extents.width * margin_factor) - text_extents.width) / 2.0,
-                ((text_extents.height * margin_factor) - text_extents.height) / 2.0,
+                (text_extents.width() * margin_factor).round() as u16,
+                (text_extents.height() * margin_factor).round() as u16,
+                ((text_extents.width() * margin_factor) - text_extents.width()) / 2.0,
+                ((text_extents.height() * margin_factor) - text_extents.height()) / 2.0,
             )
         };
 
@@ -106,8 +106,9 @@ fn main() -> Result<()> {
         // https://www.cairographics.org/samples/text_extents/
         // https://www.cairographics.org/tutorial/#L1understandingtext
         let draw_pos = (
-            margin_width - text_extents.x_bearing,
-            text_extents.height + margin_height - (text_extents.height + text_extents.y_bearing),
+            margin_width - text_extents.x_bearing(),
+            text_extents.height() + margin_height
+                - (text_extents.height() + text_extents.y_bearing()),
         );
 
         debug!(
