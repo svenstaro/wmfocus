@@ -40,5 +40,5 @@ version = "0.4"
 features = ["keysyms"]
 
 [dependencies.x11]
-version = "2.20.0"
+version = "2.21.0"
 features = ["xlib"]
