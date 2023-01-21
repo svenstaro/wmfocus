@@ -18,7 +18,7 @@ codegen-units = 1
 i3 = ["i3ipc"]
 
 [dependencies]
-cairo-sys-rs = "0.16"
+cairo-rs = { version = "0.16", features = ["xcb"] }
 css-color-parser = "0.1"
 font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
@@ -27,18 +27,6 @@ log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1.6"
 clap = { version = "3.2", features = ["derive", "wrap_help"] }
-xcb = "0.10"
-xkbcommon = "0.5"
 anyhow = "1"
-
-[dependencies.cairo-rs]
-version = "0.16"
-features = ["xcb"]
-
-[dependencies.xcb-util]
-version = "0.4"
-features = ["keysyms"]
-
-[dependencies.x11]
-version = "2.21.0"
-features = ["xlib"]
+x11rb = { version = "0.11", features = ["allow-unsafe-code"] }
+xkeysym = "0.1.0"

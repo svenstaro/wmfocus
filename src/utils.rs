@@ -1,12 +1,16 @@
+use std::iter;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
 use anyhow::{bail, Context, Result};
 use itertools::Itertools;
 use log::debug;
 use regex::Regex;
-use std::ffi::CStr;
-use std::iter;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
-use xcb::ffi::xcb_visualid_t;
+use x11rb::connection::Connection;
+use x11rb::protocol::xproto::{
+    grab_keyboard, grab_pointer, ConnectionExt, EventMask, GrabMode, GrabStatus, Screen, Visualtype,
+};
+use x11rb::protocol::Event;
 
 use crate::args::AppConfig;
 use crate::{DesktopWindow, RenderWindow};
@@ -42,12 +46,42 @@ pub fn get_next_hint(
     Ok(ret)
 }
 
-pub fn find_visual(conn: &xcb::Connection, visual: xcb_visualid_t) -> Option<xcb::Visualtype> {
-    for screen in conn.get_setup().roots() {
-        for depth in screen.allowed_depths() {
-            for vis in depth.visuals() {
-                if visual == vis.visual_id() {
-                    return Some(vis);
+/// A rust version of XCB's `xcb_visualtype_t` struct. This is used in a FFI-way.
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct xcb_visualtype_t {
+    pub visual_id: u32,
+    pub class: u8,
+    pub bits_per_rgb_value: u8,
+    pub colormap_entries: u16,
+    pub red_mask: u32,
+    pub green_mask: u32,
+    pub blue_mask: u32,
+    pub pad0: [u8; 4],
+}
+
+impl From<Visualtype> for xcb_visualtype_t {
+    fn from(value: Visualtype) -> xcb_visualtype_t {
+        xcb_visualtype_t {
+            visual_id: value.visual_id,
+            class: value.class.into(),
+            bits_per_rgb_value: value.bits_per_rgb_value,
+            colormap_entries: value.colormap_entries,
+            red_mask: value.red_mask,
+            green_mask: value.green_mask,
+            blue_mask: value.blue_mask,
+            pad0: [0; 4],
+        }
+    }
+}
+
+/// Find a `xcb_visualtype_t` based on its ID number
+pub fn find_xcb_visualtype(conn: &impl Connection, visual_id: u32) -> Option<xcb_visualtype_t> {
+    for root in &conn.setup().roots {
+        for depth in &root.allowed_depths {
+            for visual in &depth.visuals {
+                if visual.visual_id == visual_id {
+                    return Some((*visual).into());
                 }
             }
         }
@@ -157,28 +191,24 @@ pub fn draw_hint_text(
 /// Generally with X, I found that you can't grab global keyboard input without it failing
 /// sometimes due to other clients grabbing it occasionally. Hence, we'll have to keep retrying
 /// until we eventually succeed.
-pub fn snatch_keyboard(
-    conn: &xcb::Connection,
-    screen: &xcb::Screen,
-    timeout: Duration,
-) -> Result<()> {
+pub fn snatch_keyboard(conn: &impl Connection, screen: &Screen, timeout: Duration) -> Result<()> {
     let now = Instant::now();
     loop {
         if now.elapsed() > timeout {
             bail!("Couldn't grab keyboard input within {:?}", now.elapsed());
         }
-        let grab_keyboard_cookie = xcb::xproto::grab_keyboard(
+        let grab_keyboard_cookie = grab_keyboard(
             conn,
             true,
-            screen.root(),
-            xcb::CURRENT_TIME,
-            xcb::GRAB_MODE_ASYNC as u8,
-            xcb::GRAB_MODE_ASYNC as u8,
+            screen.root,
+            x11rb::CURRENT_TIME,
+            GrabMode::ASYNC,
+            GrabMode::ASYNC,
         );
-        let grab_keyboard_reply = grab_keyboard_cookie
-            .get_reply()
+        let grab_keyboard_reply = grab_keyboard_cookie?
+            .reply()
             .context("Couldn't communicate with X")?;
-        if grab_keyboard_reply.status() == xcb::GRAB_STATUS_SUCCESS as u8 {
+        if grab_keyboard_reply.status == GrabStatus::SUCCESS {
             return Ok(());
         }
         sleep(Duration::from_millis(1));
@@ -190,27 +220,27 @@ pub fn snatch_keyboard(
 /// Generally with X, I found that you can't grab global mouse input without it failing sometimes
 /// due to other clients grabbing it occasionally. Hence, we'll have to keep retrying until we
 /// eventually succeed.
-pub fn snatch_mouse(conn: &xcb::Connection, screen: &xcb::Screen, timeout: Duration) -> Result<()> {
+pub fn snatch_mouse(conn: &impl Connection, screen: &Screen, timeout: Duration) -> Result<()> {
     let now = Instant::now();
     loop {
         if now.elapsed() > timeout {
             bail!("Couldn't grab keyboard input within {:?}", now.elapsed());
         }
-        let grab_pointer_cookie = xcb::xproto::grab_pointer(
+        let grab_pointer_cookie = grab_pointer(
             conn,
             true,
-            screen.root(),
-            xcb::EVENT_MASK_BUTTON_PRESS as u16,
-            xcb::GRAB_MODE_ASYNC as u8,
-            xcb::GRAB_MODE_ASYNC as u8,
-            xcb::NONE,
-            xcb::NONE,
-            xcb::CURRENT_TIME,
+            screen.root,
+            EventMask::BUTTON_PRESS,
+            GrabMode::ASYNC,
+            GrabMode::ASYNC,
+            x11rb::NONE,
+            x11rb::NONE,
+            x11rb::CURRENT_TIME,
         );
-        let grab_pointer_reply = grab_pointer_cookie
-            .get_reply()
+        let grab_pointer_reply = grab_pointer_cookie?
+            .reply()
             .context("Couldn't communicate with X")?;
-        if grab_pointer_reply.status() == xcb::GRAB_STATUS_SUCCESS as u8 {
+        if grab_pointer_reply.status == GrabStatus::SUCCESS {
             return Ok(());
         }
         sleep(Duration::from_millis(1));
@@ -256,17 +286,26 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
     }
 }
 
-pub fn get_pressed_symbol(conn: &xcb::Connection, event: &xcb::base::GenericEvent) -> u32 {
-    let key_press: &xcb::KeyPressEvent = unsafe { xcb::cast_event(event) };
-    let syms = xcb_util::keysyms::KeySymbols::new(conn);
-    syms.press_lookup_keysym(key_press, 0)
-}
+pub fn get_pressed_symbol(conn: &impl Connection, event: Event) -> u32 {
+    let mapping = conn
+        .get_keyboard_mapping(
+            conn.setup().min_keycode,
+            conn.setup().max_keycode - conn.setup().min_keycode + 1,
+        )
+        .unwrap()
+        .reply()
+        .unwrap();
 
-pub fn convert_to_string<'a>(symbol: u32) -> Result<&'a str> {
-    unsafe {
-        CStr::from_ptr(x11::xlib::XKeysymToString(symbol.into()))
-            .to_str()
-            .context("Couldn't create Rust string from C string")
+    match event {
+        Event::KeyPress(event) | Event::KeyRelease(event) => xkeysym::keysym(
+            event.detail,
+            0,
+            conn.setup().min_keycode,
+            mapping.keysyms_per_keycode,
+            mapping.keysyms.as_slice(),
+        )
+        .unwrap(),
+        _ => unreachable!(),
     }
 }
 
