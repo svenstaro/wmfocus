@@ -1,9 +1,18 @@
-use anyhow::{Context, Result};
-use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::time::Duration;
-use xkbcommon::xkb;
+
+use anyhow::{Context, Result};
+use log::{debug, info, warn};
+use x11rb::xcb_ffi::XCBConnection;
+
+use x11rb::{
+    self,
+    connection::Connection,
+    protocol::xproto::{self, ConnectionExt as _},
+    protocol::Event,
+    wrapper::ConnectionExt,
+};
 
 mod args;
 mod utils;
@@ -45,24 +54,8 @@ fn main() -> Result<()> {
     // Sort by position to make hint position more deterministic.
     let desktop_windows = utils::sort_by_pos(desktop_windows_raw);
 
-    let (conn, screen_num) = xcb::Connection::connect(None).context("No Xorg connection")?;
-    let setup = conn.get_setup();
-    let screen = setup
-        .roots()
-        .nth(screen_num as usize)
-        .context("Couldn't get screen")?;
-
-    let values = [
-        (xcb::CW_BACK_PIXEL, screen.black_pixel()),
-        (
-            xcb::CW_EVENT_MASK,
-            xcb::EVENT_MASK_EXPOSURE
-                | xcb::EVENT_MASK_KEY_PRESS
-                | xcb::EVENT_MASK_BUTTON_PRESS
-                | xcb::EVENT_MASK_BUTTON_RELEASE,
-        ),
-        (xcb::CW_OVERRIDE_REDIRECT, 1),
-    ];
+    let (conn, screen_num) = XCBConnection::connect(None).context("No Xorg connection")?;
+    let screen = &conn.setup().roots[screen_num];
 
     // Assemble RenderWindows from DesktopWindows.
     let mut render_windows = HashMap::new();
@@ -152,60 +145,64 @@ fn main() -> Result<()> {
             );
         }
 
-        let xcb_window_id = conn.generate_id();
+        let xcb_window_id = conn.generate_id()?;
+
+        let win_aux = xproto::CreateWindowAux::new()
+            .event_mask(
+                xproto::EventMask::EXPOSURE
+                    | xproto::EventMask::KEY_PRESS
+                    | xproto::EventMask::BUTTON_PRESS
+                    | xproto::EventMask::BUTTON_RELEASE,
+            )
+            .backing_pixel(screen.black_pixel)
+            .override_redirect(1);
 
         // Create the actual window.
-        xcb::create_window(
+        xproto::create_window(
             &conn,
-            xcb::COPY_FROM_PARENT as u8,
+            x11rb::COPY_FROM_PARENT as u8,
             xcb_window_id,
-            screen.root(),
+            screen.root,
             x,
             y,
             width,
             height,
             0,
-            xcb::WINDOW_CLASS_INPUT_OUTPUT as u16,
-            screen.root_visual(),
-            &values,
-        );
+            xproto::WindowClass::INPUT_OUTPUT,
+            screen.root_visual,
+            &win_aux,
+        )?;
 
-        xcb::map_window(&conn, xcb_window_id);
+        conn.map_window(xcb_window_id)?;
 
         // Set transparency.
-        let opacity_atom = xcb::intern_atom(&conn, false, "_NET_WM_WINDOW_OPACITY")
-            .get_reply()
+        let opacity_atom = conn
+            .intern_atom(false, b"_NET_WM_WINDOW_OPACITY")?
+            .reply()
             .context("Couldn't create atom _NET_WM_WINDOW_OPACITY")?
-            .atom();
+            .atom;
         let opacity = (0xFFFFFFFFu64 as f64 * app_config.bg_color.3) as u64;
-        xcb::change_property(
-            &conn,
-            xcb::PROP_MODE_REPLACE as u8,
+        conn.change_property32(
+            xproto::PropMode::REPLACE,
             xcb_window_id,
             opacity_atom,
-            xcb::ATOM_CARDINAL,
-            32,
-            &[opacity],
-        );
+            xproto::AtomEnum::CARDINAL,
+            &[opacity as u32],
+        )?;
 
-        conn.flush();
+        conn.flush()?;
 
-        let mut visual =
-            utils::find_visual(&conn, screen.root_visual()).context("Couldn't find visual")?;
-        let cairo_xcb_conn = unsafe {
-            cairo::XCBConnection::from_raw_none(
-                conn.get_raw_conn() as *mut cairo_sys::xcb_connection_t
-            )
-        };
-        let cairo_xcb_drawable = cairo::XCBDrawable(xcb_window_id);
-        let raw_visualtype = &mut visual.base as *mut xcb::ffi::xcb_visualtype_t;
-        let cairo_xcb_visual = unsafe {
-            cairo::XCBVisualType::from_raw_none(raw_visualtype as *mut cairo_sys::xcb_visualtype_t)
-        };
+        let mut visual = utils::find_xcb_visualtype(&conn, screen.root_visual)
+            .context("Couldn't find visual")?;
+        let cairo_conn =
+            unsafe { cairo::XCBConnection::from_raw_none(conn.get_raw_xcb_connection() as _) };
+        let cairo_visual =
+            unsafe { cairo::XCBVisualType::from_raw_none(&mut visual as *mut _ as _) };
+
         let surface = cairo::XCBSurface::create(
-            &cairo_xcb_conn,
-            &cairo_xcb_drawable,
-            &cairo_xcb_visual,
+            &cairo_conn,
+            &cairo::XCBDrawable(xcb_window_id),
+            &cairo_visual,
             width.into(),
             height.into(),
         )
@@ -224,10 +221,10 @@ fn main() -> Result<()> {
     }
 
     // Receive keyboard events.
-    utils::snatch_keyboard(&conn, &screen, Duration::from_secs(1))?;
+    utils::snatch_keyboard(&conn, screen, Duration::from_secs(1))?;
 
     // Receive mouse events.
-    utils::snatch_mouse(&conn, &screen, Duration::from_secs(1))?;
+    utils::snatch_mouse(&conn, screen, Duration::from_secs(1))?;
 
     // Since we might have lots of windows on the desktop, it might be required
     // to enter a sequence in order to get to the correct window.
@@ -237,89 +234,87 @@ fn main() -> Result<()> {
 
     let mut closed = false;
     while !closed {
-        let event = conn.wait_for_event();
-        match event {
-            None => {
-                closed = true;
-            }
-            Some(event) => {
-                let r = event.response_type();
-                match r {
-                    xcb::EXPOSE => {
+        let event = conn.wait_for_event().context("No events")?;
+        let event_option = Some(event);
+        if let Some(e) = event_option {
+            match e {
+                Event::Expose(_) => {
+                    for (hint, rw) in &render_windows {
+                        utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
+                            .context("Couldn't draw hint text")?;
+                        conn.flush()?;
+                    }
+                }
+                Event::ButtonPress(_) => {
+                    closed = true;
+                }
+                Event::KeyRelease(_) => {
+                    let ksym = utils::get_pressed_symbol(&conn, e);
+                    let kstr = xkeysym::name(ksym)
+                        .context("Couldn't convert ksym to string")?
+                        .replace("XK_", "");
+                    sequence.remove(&kstr);
+                }
+                Event::KeyPress(_) => {
+                    let ksym = utils::get_pressed_symbol(&conn, e);
+                    let kstr = xkeysym::name(ksym)
+                        .context("Couldn't convert ksym to string")?
+                        .replace("XK_", "");
+
+                    sequence.push(kstr.to_owned());
+
+                    if app_config.hint_chars.contains(&kstr) {
+                        info!("Adding '{}' to key sequence", kstr);
+                        pressed_keys.push_str(&kstr);
+                    } else {
+                        warn!("Pressed key '{}' is not a valid hint characters", kstr);
+                    }
+
+                    info!("Current key sequence: '{}'", pressed_keys);
+
+                    if ksym == xkeysym::KEY_Escape || app_config.exit_keys.contains(&sequence) {
+                        info!("{:?} is exit sequence", sequence);
+                        closed = true;
+                        continue;
+                    }
+
+                    // Attempt to match the current sequence of keys as a string to the window
+                    // hints shown.
+                    // If there is an exact match, we're done. We'll then focus the window
+                    // and exit. However, we also want to check whether there is still any
+                    // chance to focus any windows from the current key sequence. If there
+                    // is not then we will also just exit and focus no new window.
+                    // If there still is a chance we might find a window then we'll just
+                    // keep going for now.
+                    if sequence.is_started() {
+                        utils::remove_last_key(&mut pressed_keys, &kstr);
+                    } else if let Some(rw) = &render_windows.get(&pressed_keys) {
+                        info!("Found matching window, focusing");
+                        if app_config.print_only {
+                            println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
+                        } else {
+                            wm::focus_window(rw.desktop_window).context("Couldn't focus window")?;
+                        }
+                        closed = true;
+                    } else if !pressed_keys.is_empty()
+                        && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
+                    {
                         for (hint, rw) in &render_windows {
                             utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
                                 .context("Couldn't draw hint text")?;
-                            conn.flush();
+                            conn.flush()?;
                         }
+                        continue;
+                    } else {
+                        warn!("No more matches possible with current key sequence");
+                        closed = app_config.exit_keys.is_empty();
+                        utils::remove_last_key(&mut pressed_keys, &kstr);
                     }
-                    xcb::BUTTON_PRESS => {
-                        closed = true;
-                    }
-                    xcb::KEY_RELEASE => {
-                        let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym)
-                            .context("Couldn't convert ksym to string")?;
-                        sequence.remove(kstr);
-                    }
-                    xcb::KEY_PRESS => {
-                        let ksym = utils::get_pressed_symbol(&conn, &event);
-                        let kstr = utils::convert_to_string(ksym)
-                            .context("Couldn't convert ksym to string")?;
-
-                        sequence.push(kstr.to_owned());
-
-                        if app_config.hint_chars.contains(kstr) {
-                            info!("Adding '{}' to key sequence", kstr);
-                            pressed_keys.push_str(kstr);
-                        } else {
-                            warn!("Pressed key '{}' is not a valid hint characters", kstr);
-                        }
-
-                        info!("Current key sequence: '{}'", pressed_keys);
-
-                        if ksym == xkb::KEY_Escape || app_config.exit_keys.contains(&sequence) {
-                            info!("{:?} is exit sequence", sequence);
-                            closed = true;
-                            continue;
-                        }
-
-                        // Attempt to match the current sequence of keys as a string to the window
-                        // hints shown.
-                        // If there is an exact match, we're done. We'll then focus the window
-                        // and exit. However, we also want to check whether there is still any
-                        // chance to focus any windows from the current key sequence. If there
-                        // is not then we will also just exit and focus no new window.
-                        // If there still is a chance we might find a window then we'll just
-                        // keep going for now.
-                        if sequence.is_started() {
-                            utils::remove_last_key(&mut pressed_keys, kstr);
-                        } else if let Some(rw) = &render_windows.get(&pressed_keys) {
-                            info!("Found matching window, focusing");
-                            if app_config.print_only {
-                                println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
-                            } else {
-                                wm::focus_window(rw.desktop_window)
-                                    .context("Couldn't focus window")?;
-                            }
-                            closed = true;
-                        } else if !pressed_keys.is_empty()
-                            && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
-                        {
-                            for (hint, rw) in &render_windows {
-                                utils::draw_hint_text(rw, &app_config, hint, &pressed_keys)
-                                    .context("Couldn't draw hint text")?;
-                                conn.flush();
-                            }
-                            continue;
-                        } else {
-                            warn!("No more matches possible with current key sequence");
-                            closed = app_config.exit_keys.is_empty();
-                            utils::remove_last_key(&mut pressed_keys, kstr);
-                        }
-                    }
-                    _ => {}
                 }
+                _ => {}
             }
+        } else {
+            closed = true;
         }
     }
 
