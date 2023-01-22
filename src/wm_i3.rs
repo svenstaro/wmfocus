@@ -72,10 +72,10 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Result<Vec<DesktopW
                     if root_node.layout == NodeLayout::Stacked {
                         root_node.rect.1 + node.deco_rect.1
                     } else {
-                        node.rect.1 - node.deco_rect.3
+                        node.rect.1 + node.deco_rect.3
                     }
                 } else {
-                    node.rect.1 - node.deco_rect.3
+                    node.rect.1 + node.deco_rect.3
                 };
 
                 let window = DesktopWindow {
