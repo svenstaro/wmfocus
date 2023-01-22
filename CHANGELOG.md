@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Modernize all dependencies
+- Fix border offset issue resulting from newer versions of i3
 
 ## [1.3.0] - 2021-10-22
 - Highlight currently selected window (also adds `--textcolorcurrent`, `--textcolorcurrentalt`, `--bgcolorcurrent`) [#82](https://github.com/svenstaro/wmfocus/issues/82)
