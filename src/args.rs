@@ -1,19 +1,19 @@
 use anyhow::{Context, Result};
-use clap::{ArgEnum, Parser};
+use clap::{Parser, ValueEnum};
 use css_color_parser::Color as CssColor;
 use font_loader::system_fonts;
 use log::{info, warn};
 
 use crate::utils;
 
-#[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HorizontalAlign {
     Left,
     Center,
     Right,
 }
 
-#[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VerticalAlign {
     Top,
     Center,
@@ -92,96 +92,135 @@ fn parse_color(color_str: &str) -> Result<(f64, f64, f64, f64), String> {
     ))
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Offset {
     pub x: i32,
     pub y: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FontConfig {
     pub font_family: String,
     pub font_size: f64,
     pub loaded_font: Vec<u8>,
 }
 
-fn parse_exit_keys(s: &str) -> utils::Sequence {
-    utils::Sequence::new(Some(s))
+fn parse_exit_keys(s: &str) -> Result<utils::Sequence> {
+    Ok(utils::Sequence::new(Some(s)))
 }
 
 #[derive(Parser, Debug)]
-#[clap(name = "wmfocus", author, about, version)]
+#[command(name = "wmfocus", author, about, version)]
 pub struct AppConfig {
     /// Use a specific TrueType font with this format: family:size
-    #[clap(short, long, default_value = "Mono:72", parse(try_from_str = parse_truetype_font))]
+    #[arg(
+        short,
+        long,
+        default_value = "Mono:72",
+        value_parser(parse_truetype_font)
+    )]
     pub font: FontConfig,
 
     /// Define a set of possbile values to use as hint characters
-    #[clap(short = 'c', long = "chars", default_value = "sadfjklewcmpgh")]
+    #[arg(short = 'c', long = "chars", default_value = "sadfjklewcmpgh")]
     pub hint_chars: String,
 
     /// Add an additional margin around the text box (value is a factor of the box size)
-    #[clap(short, long, default_value = "0.2")]
+    #[arg(short, long, default_value = "0.2")]
     pub margin: f32,
 
     /// Text color (CSS notation)
-    #[clap(long = "textcolor", display_order = 49, default_value = "#dddddd", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "textcolor",
+        display_order = 49,
+        default_value = "#dddddd",
+        value_parser(parse_color)
+    )]
     pub text_color: (f64, f64, f64, f64),
 
     /// Text color alternate (CSS notation)
-    #[clap(long = "textcoloralt", display_order = 50, default_value = "#666666", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "textcoloralt",
+        display_order = 50,
+        default_value = "#666666",
+        value_parser(parse_color)
+    )]
     pub text_color_alt: (f64, f64, f64, f64),
 
     /// Background color (CSS notation)
-    #[clap(long = "bgcolor", display_order = 51, default_value = "rgba(30, 30, 30, 0.9)", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "bgcolor",
+        display_order = 51,
+        default_value = "rgba(30, 30, 30, 0.9)",
+        value_parser(parse_color)
+    )]
     pub bg_color: (f64, f64, f64, f64),
 
     /// Text color current window (CSS notation)
-    #[clap(long = "textcolorcurrent", display_order = 52, default_value = "#333333", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "textcolorcurrent",
+        display_order = 52,
+        default_value = "#333333",
+        value_parser(parse_color)
+    )]
     pub text_color_current: (f64, f64, f64, f64),
 
     /// Text color current window alternate (CSS notation)
-    #[clap(long = "textcolorcurrentalt", display_order = 53, default_value = "#999999", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "textcolorcurrentalt",
+        display_order = 53,
+        default_value = "#999999",
+        value_parser(parse_color)
+    )]
     pub text_color_current_alt: (f64, f64, f64, f64),
 
     /// Background color current window (CSS notation)
-    #[clap(long = "bgcolorcurrent", display_order = 54, default_value = "rgba(200, 200, 200, 0.9)", parse(try_from_str = parse_color))]
+    #[arg(
+        long = "bgcolorcurrent",
+        display_order = 54,
+        default_value = "rgba(200, 200, 200, 0.9)",
+        value_parser(parse_color)
+    )]
     pub bg_color_current: (f64, f64, f64, f64),
 
     /// Horizontal alignment of the box inside the window
-    #[clap(
+    #[arg(
         long = "halign",
         display_order = 100,
         default_value = "left",
-        ignore_case = true,
-        arg_enum
+        ignore_case = true
     )]
     pub horizontal_align: HorizontalAlign,
 
     /// Vertical alignment of the box inside the window
-    #[clap(
+    #[arg(
         long = "valign",
         display_order = 101,
         default_value = "top",
-        ignore_case = true,
-        arg_enum
+        ignore_case = true
     )]
     pub vertical_align: VerticalAlign,
 
     /// Completely fill out windows
-    #[clap(long, display_order = 102, conflicts_with_all(&["horizontal-align", "vertical-align", "margin", "offset"]))]
+    #[arg(long, display_order = 102, conflicts_with_all(&["horizontal_align", "vertical_align", "margin", "offset"]))]
     pub fill: bool,
 
     /// Print the window id only but don't change focus
-    #[clap(short, long)]
+    #[arg(short, long)]
     pub print_only: bool,
 
     /// Offset box from edge of window relative to alignment (x,y)
-    #[clap(short, long, allow_hyphen_values = true, default_value = "0,0", parse(try_from_str = parse_offset))]
+    #[arg(
+        short,
+        long,
+        allow_hyphen_values = true,
+        default_value = "0,0",
+        value_parser(parse_offset)
+    )]
     pub offset: Offset,
 
     /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
-    #[clap(short, long, parse(from_str = parse_exit_keys))]
+    #[arg(short, long, value_parser(parse_exit_keys))]
     pub exit_keys: Vec<utils::Sequence>,
 }
 

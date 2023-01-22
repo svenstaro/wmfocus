@@ -310,7 +310,7 @@ pub fn get_pressed_symbol(conn: &impl Connection, event: Event) -> u32 {
 }
 
 /// Struct helps to write sequence and check if it is found in list of exit sequences
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sequence {
     sequence: Vec<String>,
 }
