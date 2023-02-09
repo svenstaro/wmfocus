@@ -18,7 +18,7 @@ codegen-units = 1
 i3 = ["i3ipc"]
 
 [dependencies]
-cairo-rs = { version = "0.16", features = ["xcb"] }
+cairo-rs = { version = "0.17", features = ["xcb"] }
 css-color-parser = "0.1"
 font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
