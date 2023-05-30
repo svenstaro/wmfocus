@@ -28,5 +28,5 @@ pretty_env_logger = "0.5"
 regex = "1.8"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
 anyhow = "1"
-x11rb = { version = "0.11", features = ["allow-unsafe-code"] }
+x11rb = { version = "0.12", features = ["allow-unsafe-code"] }
 xkeysym = "0.1.0"
