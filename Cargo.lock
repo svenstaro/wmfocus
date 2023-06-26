@@ -1116,6 +1116,6 @@ dependencies = [
 
 [[package]]
 name = "xkeysym"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f9ffca2fa39e41ad88339e75d9e63c8ff8741154bccb65e94e3eb6d0af66268"
+checksum = "054a8e68b76250b253f671d1268cb7f1ae089ec35e195b2efb2a4e9a836d0621"
