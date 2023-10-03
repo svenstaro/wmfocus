@@ -18,11 +18,11 @@ codegen-units = 1
 i3 = ["i3ipc"]
 
 [dependencies]
-cairo-rs = { version = "0.17", features = ["xcb"] }
+cairo-rs = { version = "0.18", features = ["xcb"] }
 css-color-parser = "0.1"
 font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
-itertools = "0.10"
+itertools = "0.11"
 log = "0.4"
 pretty_env_logger = "0.5"
 regex = "1.8"
