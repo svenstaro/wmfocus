@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use i3ipc::reply::{Node, NodeLayout, NodeType, Workspace};
 use i3ipc::I3Connection;
 use log::{debug, info};
+use mouse_rs::Mouse;
 
 use crate::DesktopWindow;
 
@@ -121,19 +122,31 @@ pub enum WindowCommand {
 
 impl Default for &WindowCommand {
     fn default() -> Self {
-        return &WindowCommand::Focus
+        return &WindowCommand::Focus;
     }
 }
-
 
 impl WindowCommand {
     pub fn send_to_window(&self, window: &DesktopWindow) -> Result<()> {
         match self {
-            WindowCommand::Focus => send_command_string(window, "focus"),
+            WindowCommand::Focus => change_focus_move_mouse(window),
             WindowCommand::Kill => send_command_string(window, "kill"),
             WindowCommand::Float => send_command_string(window, "floating toggle"),
         }
     }
+}
+
+/// Change focus to a given window.
+///
+/// This command also moves the mouse in order to ensure that focus is changed
+fn change_focus_move_mouse(window: &DesktopWindow) -> Result<()> {
+    send_command_string(window, "focus")?;
+    let mouse = Mouse::new();
+    let x_pos = window.pos.0 + window.size.0 / 2;
+    let y_pos = window.pos.1 + window.size.1 / 2;
+    info!("x_pos:{x_pos} y_pos:{y_pos}");
+    mouse.move_to(x_pos, y_pos).unwrap();
+    Ok(())
 }
 
 /// Send the given string as an i3 command to the selected window.

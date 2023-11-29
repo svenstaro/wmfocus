@@ -30,6 +30,7 @@ clap = { version = "3.1.18", features = ["derive", "wrap_help"] }
 xcb = "0.10"
 xkbcommon = "0.4"
 anyhow = "1"
+mouse-rs = "0.4"
 
 [dependencies.cairo-rs]
 version = "0.15"
