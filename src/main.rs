@@ -250,14 +250,16 @@ fn main() -> Result<()> {
                 }
                 Event::KeyRelease(_) => {
                     let ksym = utils::get_pressed_symbol(&conn, e);
-                    let kstr = xkeysym::name(ksym)
+                    let kstr = ksym
+                        .name()
                         .context("Couldn't convert ksym to string")?
                         .replace("XK_", "");
                     sequence.remove(&kstr);
                 }
                 Event::KeyPress(_) => {
                     let ksym = utils::get_pressed_symbol(&conn, e);
-                    let kstr = xkeysym::name(ksym)
+                    let kstr = ksym
+                        .name()
                         .context("Couldn't convert ksym to string")?
                         .replace("XK_", "");
 
@@ -272,7 +274,9 @@ fn main() -> Result<()> {
 
                     info!("Current key sequence: '{}'", pressed_keys);
 
-                    if ksym == xkeysym::KEY_Escape || app_config.exit_keys.contains(&sequence) {
+                    if ksym == xkeysym::key::Escape.into()
+                        || app_config.exit_keys.contains(&sequence)
+                    {
                         info!("{:?} is exit sequence", sequence);
                         closed = true;
                         continue;

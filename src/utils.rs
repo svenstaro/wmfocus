@@ -286,7 +286,7 @@ pub fn remove_last_key(pressed_keys: &mut String, kstr: &str) {
     }
 }
 
-pub fn get_pressed_symbol(conn: &impl Connection, event: Event) -> u32 {
+pub fn get_pressed_symbol(conn: &impl Connection, event: Event) -> xkeysym::Keysym {
     let mapping = conn
         .get_keyboard_mapping(
             conn.setup().min_keycode,
@@ -298,9 +298,9 @@ pub fn get_pressed_symbol(conn: &impl Connection, event: Event) -> u32 {
 
     match event {
         Event::KeyPress(event) | Event::KeyRelease(event) => xkeysym::keysym(
-            event.detail,
+            event.detail.into(),
             0,
-            conn.setup().min_keycode,
+            conn.setup().min_keycode.into(),
             mapping.keysyms_per_keycode,
             mapping.keysyms.as_slice(),
         )
