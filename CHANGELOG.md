@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add the `--swap` flag to swap the currently active window with the selected window.
 
 ## [1.4.0] - 2023-01-22
 - Modernize all dependencies

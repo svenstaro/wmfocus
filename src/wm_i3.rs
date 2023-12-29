@@ -121,3 +121,17 @@ pub fn focus_window(window: &DesktopWindow) -> Result<()> {
     info!("Sending to i3: {:?}", command);
     Ok(())
 }
+
+/// Focus a specific `window`.
+pub fn swap_windows(active_window: &DesktopWindow, window: &DesktopWindow) -> Result<()> {
+    let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
+    let command_str = format!(
+        "[con_id=\"{}\"] swap with container con_id {}",
+        active_window.id, window.id
+    );
+    let command = connection
+        .run_command(&command_str)
+        .context("Couldn't communicate with i3")?;
+    info!("Sending to i3: {:?}", command);
+    Ok(())
+}

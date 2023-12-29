@@ -296,6 +296,16 @@ fn main() -> Result<()> {
                         info!("Found matching window, focusing");
                         if app_config.print_only {
                             println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
+                        } else if app_config.swap {
+                            let Some(active_window) =
+                                desktop_windows.iter().find(|window| window.is_focused)
+                            else {
+                                warn!("There's no active window.");
+                                closed = true;
+                                continue;
+                            };
+                            wm::swap_windows(active_window, rw.desktop_window)
+                                .context("Couldn't swap windows")?;
                         } else {
                             wm::focus_window(rw.desktop_window).context("Couldn't focus window")?;
                         }
