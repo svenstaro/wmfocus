@@ -222,6 +222,10 @@ pub struct AppConfig {
     /// List of keys to exit application, sequences separator is space, key separator is '+', eg Control_L+g Shift_L+f
     #[arg(short, long, value_parser(parse_exit_keys))]
     pub exit_keys: Vec<utils::Sequence>,
+
+    /// If this flag is set, the currently active window will swap with the selected window.
+    #[arg(short, long)]
+    pub swap: bool,
 }
 
 pub fn parse_args() -> AppConfig {
