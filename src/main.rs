@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::iter::Iterator;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
@@ -7,7 +6,6 @@ use log::{debug, info, warn};
 use x11rb::xcb_ffi::XCBConnection;
 
 use x11rb::{
-    self,
     connection::Connection,
     protocol::xproto::{self, ConnectionExt as _},
     protocol::Event,
