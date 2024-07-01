@@ -29,4 +29,4 @@ regex = "1.10"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
 anyhow = "1"
 x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
-xkeysym = "0.2.0"
+xkeysym = "0.2.1"
