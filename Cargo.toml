@@ -18,7 +18,7 @@ codegen-units = 1
 i3 = ["i3ipc"]
 
 [dependencies]
-cairo-rs = { version = "0.19", features = ["xcb"] }
+cairo-rs = { version = "0.20", features = ["xcb"] }
 css-color-parser = "0.1"
 font-loader = "0.11"
 i3ipc = { version = "0.10", optional = true }
@@ -29,4 +29,4 @@ regex = "1.10"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
 anyhow = "1"
 x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
-xkeysym = "0.2.0"
+xkeysym = "0.2.1"
