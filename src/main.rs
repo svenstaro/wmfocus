@@ -119,7 +119,7 @@ fn main() -> Result<()> {
         };
 
         let y_offset = app_config.offset.y;
-        let y = match app_config.vertical_align {
+        let mut y = match app_config.vertical_align {
             args::VerticalAlign::Top => (desktop_window.pos.1 + y_offset) as i16,
             args::VerticalAlign::Center => {
                 (desktop_window.pos.1 + desktop_window.size.1 / 2 - i32::from(height) / 2) as i16
@@ -136,7 +136,10 @@ fn main() -> Result<()> {
             (x.into(), y.into(), width.into(), height.into()),
         );
         while !overlaps.is_empty() {
+            // Move x by the width of the overlap
             x += overlaps.pop().unwrap().2 as i16;
+            // Lower y position to clarify it's not part of parent label.
+            y = y+20 as i16;
             overlaps = utils::find_overlaps(
                 render_windows.values().collect(),
                 (x.into(), y.into(), width.into(), height.into()),
